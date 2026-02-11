@@ -18,8 +18,21 @@ const hashOTP = (otp: string) =>
 // Handles new user registration, hashes passwords, and sends initial verification OTP
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, username, email, countryCode, phoneNumber, password, role, verificationMethod } =
-      req.body;
+    const { name, username, email, countryCode, phoneNumber, password, verificationMethod } = req.body;
+    let { role } = req.body;
+
+    // Sanitize role: explicitly allow only 'admin', everything else becomes 'user'
+    // This fixes issues where 'users' (plural) might be sent by frontend
+    if (role !== 'admin') {
+      role = 'user';
+    }
+
+    // Auto-promote first user to admin
+    const adminCount = await Admin.countDocuments();
+    if (adminCount === 0) {
+        console.log("No admins found. Promoting this user to Admin.");
+        role = 'admin';
+    }
 
     // Only set fullPhoneNumber if phoneNumber is provided and not empty
     const fullPhoneNumber = (phoneNumber && phoneNumber.trim()) 
@@ -66,7 +79,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       countryCode,
       phoneNumber: fullPhoneNumber,
       password: hashedPassword,
-      role: role || 'user',
+      role: role,
     });
 
     // Set OTP based on verification method
@@ -182,6 +195,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { identifier, password } = req.body; // identifier can be email or username
 
+    if (!identifier || !password) {
+      res.status(400).json({ message: "Identifier and password are required" });
+      return;
+    }
+
     // Find user by email OR username in both collections
     let user: IUser | IAdmin | null = await User.findOne({
       $or: [{ email: identifier }, { username: identifier }],
@@ -212,6 +230,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const otp = generateOTP();
     user.otp = hashOTP(otp); // Store hashed OTP for security
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    // Self-heal: Fix invalid role if it exists in DB (e.g. 'users' -> 'user')
+    // This prevents validation errors when saving the user with an OTP
+    if ((user as any).role === 'users') {
+        user.role = 'user';
+    }
+
     await user.save();
     const otpMsg = `2FA OTP sent to ${user.email} (Category: ${user.role})`;
     console.log(otpMsg);
@@ -225,6 +250,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       requiresOtp: true,
     });
   } catch (error) {
+    console.error('Login Error:', error);
     res.status(500).json({ message: "Something went wrong", error });
   }
 };

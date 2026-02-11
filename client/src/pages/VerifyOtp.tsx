@@ -20,8 +20,13 @@ const VerifyOtp: React.FC = () => {
       const payload = method === 'phone' ? { phoneNumber, otp } : { email, otp };
       const { data } = await api.post('/auth/verify-otp', payload);
       localStorage.setItem('token', data.token);
-      // alert('Email verified successfully!');
-      navigate('/dashboard');
+      localStorage.setItem('role', data.result.role);
+      
+      if (data.result.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         alert(error.response?.data?.message || 'Verification failed');

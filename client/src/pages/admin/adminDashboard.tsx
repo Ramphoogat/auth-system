@@ -18,6 +18,7 @@ import {
   FiLayout as LayoutIcon
 } from 'react-icons/fi';
 import api from '../../api/axios';
+import { AxiosError } from 'axios';
 import bgMacOS from '../../assets/MacOS.jpg';
 import bgColorful from '../../assets/Colorful.jpg';
 import bgMacBook from '../../assets/MacBook Pro 14 wallpaper.jpg';
@@ -98,15 +99,28 @@ const AdminDashboard = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [profileRes, statsRes, usersRes] = await Promise.all([
-          api.get('/auth/profile'),
+        
+        // First fetch profile to verify role
+        const profileRes = await api.get('/auth/profile');
+        const user = profileRes.data.user;
+        
+        const name = user.name || user.username;
+        setAdminName(name);
+        setAdminEmail(user.email);
+
+        if (user.role !== 'admin') {
+          // Identify if user is not admin
+          setWelcomeToast({ id: 'error', message: 'Access Denied: Administrator privileges required.' });
+          // Optional: redirect to a user dashboard or show a specific error ui
+           navigate('/dashboard'); // Assuming a user dashboard exists, or just stay and show error
+           return;
+        }
+
+        const [statsRes, usersRes] = await Promise.all([
           api.get('/auth/admin/stats'),
           api.get('/auth/admin/users')
         ]);
 
-        const name = profileRes.data.user.name || profileRes.data.user.username;
-        setAdminName(name);
-        setAdminEmail(profileRes.data.user.email);
         setStatsData(statsRes.data);
         setUsers(usersRes.data.users);
 
@@ -128,10 +142,15 @@ const AdminDashboard = () => {
           setWelcomeToast(null);
         }, 3000);
 
-      } catch (error) {
+      } catch (err: unknown) {
+        const error = err as AxiosError;
         console.error('Failed to fetch dashboard data', error);
-        // If unauthorized, redirect to login
-        navigate('/login');
+        if (error.response && error.response.status === 401) {
+            navigate('/login');
+        } else {
+             // Handle other errors (e.g. 403 if somehow role check passed but API failed)
+             setWelcomeToast({ id: 'error', message: 'Failed to load dashboard data.' });
+        }
       } finally {
         setIsLoading(false); 
       }
