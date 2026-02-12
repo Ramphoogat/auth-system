@@ -9,7 +9,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_URL || "*", 
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
 app.use(express.json());
 
 // Routes
@@ -26,7 +30,6 @@ if (!MONGO_URI) {
   console.error(
     "MONGO_URI is not defined in .env. Please add it to start the server.",
   );
-  process.exit(1);
 } else {
   mongoose
     .connect(MONGO_URI)
@@ -34,6 +37,12 @@ if (!MONGO_URI) {
     .catch((err) => console.error("❌ MongoDB connection error:", err));
 }
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Check if run directly (not imported)
+import { pathToFileURL } from 'url';
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
+
+export default app;
