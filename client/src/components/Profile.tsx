@@ -6,8 +6,7 @@ type ProfileForm = {
   name: string;
   username: string;
   email: string;
-  countryCode: string;
-  phoneNumber: string;
+
   currentPassword: string;
   newPassword: string;
 };
@@ -16,30 +15,17 @@ type UserResponse = {
   name?: string;
   username: string;
   email: string;
-  countryCode?: string;
-  phoneNumber?: string;
+
 };
 
-const splitPhone = (fullPhone?: string, fallbackCountryCode = '+91') => {
-  if (!fullPhone) {
-    return { countryCode: fallbackCountryCode, phoneNumber: '' };
-  }
 
-  const match = fullPhone.match(/^(\+\d{1,4})(\d+)$/);
-  if (!match) {
-    return { countryCode: fallbackCountryCode, phoneNumber: fullPhone };
-  }
-
-  return { countryCode: match[1], phoneNumber: match[2] };
-};
 
 const Profile: React.FC = () => {
   const [form, setForm] = useState<ProfileForm>({
     name: '',
     username: '',
     email: '',
-    countryCode: '+91',
-    phoneNumber: '',
+
     currentPassword: '',
     newPassword: '',
   });
@@ -71,17 +57,13 @@ const Profile: React.FC = () => {
 
       try {
         const { data } = await api.get<{ user: UserResponse }>('/auth/profile', authHeaders);
-        const { countryCode, phoneNumber } = splitPhone(
-          data.user.phoneNumber,
-          data.user.countryCode || '+91',
-        );
+
 
         const mapped: ProfileForm = {
           name: data.user.name || '',
           username: data.user.username || '',
           email: data.user.email || '',
-          countryCode,
-          phoneNumber,
+
           currentPassword: '',
           newPassword: '',
         };
@@ -126,8 +108,7 @@ const Profile: React.FC = () => {
           name: form.name.trim(),
           username: form.username.trim(),
           email: form.email.trim(),
-          countryCode: form.countryCode.trim(),
-          phoneNumber: form.phoneNumber.trim(),
+
           currentPassword: form.currentPassword || undefined,
           newPassword: form.newPassword || undefined,
         },
@@ -212,25 +193,7 @@ const Profile: React.FC = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">Phone Number</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                className="w-28 border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/40"
-                value={form.countryCode}
-                onChange={(e) => onChange('countryCode', e.target.value)}
-                required
-              />
-              <input
-                type="tel"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/40"
-                value={form.phoneNumber}
-                onChange={(e) => onChange('phoneNumber', e.target.value)}
-                required
-              />
-            </div>
-          </div>
+
 
           <div className="border-t border-gray-200 pt-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Change Password</h3>

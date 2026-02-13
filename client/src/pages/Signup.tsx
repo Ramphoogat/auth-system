@@ -8,17 +8,14 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [countryCode, setCountryCode] = useState("+91");
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
-  const [verificationMethod, setVerificationMethod] = useState("email");
+
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Handle email change and auto-populate username
+  // Handle email change and auto-take the username
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     const emailValue = e.target.value;
     setEmail(emailValue);
@@ -45,18 +42,13 @@ const Signup = () => {
         name,
         username,
         email,
-        countryCode,
-        phoneNumber,
         password,
-        role,
-        verificationMethod,
+        // No role - backend will default to 'user'
       });
-      alert(`Signup successful! Check your ${verificationMethod} for OTP.`);
+      alert(`Signup successful! Check your email for OTP.`);
       navigate("/verify-otp", {
         state: {
           email,
-          phoneNumber: `${countryCode}${phoneNumber}`,
-          method: verificationMethod,
         },
       });
     } catch (error: unknown) {
@@ -107,21 +99,6 @@ const Signup = () => {
               />
             </div>
             <div>
-              <label className="sr-only" htmlFor="username">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                placeholder="Username"
-                required
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-            <div>
               <label className="sr-only" htmlFor="email">
                 Email
               </label>
@@ -136,38 +113,22 @@ const Signup = () => {
                 onChange={handleEmailChange}
               />
             </div>
-            <div className="flex gap-2">
-              <div className="w-1/3 sm:w-1/4">
-                <label className="sr-only" htmlFor="countryCode">
-                  Country Code
-                </label>
-                <input
-                  id="countryCode"
-                  name="countryCode"
-                  type="text"
-                  placeholder="+91"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none"
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                />
-              </div>
-              <div className="flex-1">
-                <label className="sr-only" htmlFor="phoneNumber">
-                  Phone Number
-                </label>
-                <input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  type="tel"
-                  placeholder="Phone Number"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-              </div>
+            <div>
+              <label className="sr-only" htmlFor="username">
+                Username
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                placeholder="Username"
+                required
+                className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
             </div>
+
             <div>
               <label className="sr-only" htmlFor="password">
                 Password
@@ -182,43 +143,6 @@ const Signup = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <label
-                  className="block text-xs font-semibold text-slate-500 uppercase mb-1 ml-1"
-                  htmlFor="role"
-                >
-                  Account Type
-                </label>
-                <select
-                  id="role"
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none appearance-none"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                >
-                  <option value="user">Public User</option>
-                  <option value="admin">Administrator</option>
-                </select>
-              </div>
-              <div className="flex-1">
-                <label
-                  className="block text-xs font-semibold text-slate-500 uppercase mb-1 ml-1"
-                  htmlFor="verificationMethod"
-                >
-                  OTP Via
-                </label>
-                <select
-                  id="verificationMethod"
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none appearance-none"
-                  value={verificationMethod}
-                  onChange={(e) => setVerificationMethod(e.target.value)}
-                >
-                  <option value="email">Email</option>
-                  <option value="phone">Phone</option>
-                </select>
-              </div>
             </div>
 
             <div className="flex items-start">

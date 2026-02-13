@@ -10,36 +10,27 @@ const Login = () => {
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
   const [emailForOtp, setEmailForOtp] = useState("");
-  const [countryCode, setCountryCode] = useState("+91");
-  const [phoneNumber, setPhoneNumber] = useState(""); // for phone login
-  const [loginMethod, setLoginMethod] = useState<"password" | "phone">(
-    "password",
-  );
+
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [isAdminView, setIsAdminView] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      if (loginMethod === "password") {
-        const { data } = await api.post("/auth/login", {
-          identifier,
-          password,
-        });
-        setEmailForOtp(data.email);
-        setStep("otp");
-      } else {
-        await api.post("/auth/login-with-phone", { countryCode, phoneNumber });
-        setStep("otp");
-      }
+      const { data } = await api.post("/auth/login", {
+        identifier,
+        password,
+        // No role - backend uses stored role
+      });
+      setEmailForOtp(data.email);
+      setStep("otp");
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 404) {
-          alert("No user found in usage database. Please sign up first.");
+          alert("No user found in database. Please sign up first.");
         } else {
           alert(error.response?.data?.message || "Login failed");
         }
@@ -55,13 +46,15 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-      const payload =
-        loginMethod === "phone"
-          ? { phoneNumber: fullPhoneNumber, otp }
-          : { email: emailForOtp, otp };
+      const payload = { 
+        email: emailForOtp, 
+        otp
+        // No role - backend uses stored role
+      };
 
       const { data } = await api.post("/auth/verify-otp", payload);
+
+      const userRole = data.result.role;
 
       if (rememberMe) {
         localStorage.setItem("token", data.token);
@@ -73,13 +66,14 @@ const Login = () => {
         localStorage.setItem("last_user", identifier);
       }
 
-      // Redirect based on the portal used for login
-      if (isAdminView) {
-        // If logging in via Admin Portal, go to Admin Dashboard
-        // (Backend verifies role, but double check handled by protected route usually)
+      // Redirect based on role
+      if (userRole === "admin") {
         navigate("/admin/dashboard");
+      } else if (userRole === "author") {
+        navigate("/author/dashboard");
+      } else if (userRole === "editor") {
+        navigate("/editor/dashboard");
       } else {
-        // If logging in via Public Portal, go to Public Dashboard
         navigate("/dashboard");
       }
     } catch (error: unknown) {
@@ -95,11 +89,7 @@ const Login = () => {
 
   const handleResendOtp = async () => {
     try {
-      const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-      const payload =
-        loginMethod === "phone"
-          ? { phoneNumber: fullPhoneNumber }
-          : { email: emailForOtp };
+      const payload = { email: emailForOtp };
       await api.post("/auth/resend-otp", payload);
       alert("OTP resent successfully!");
     } catch (error: unknown) {
@@ -115,7 +105,7 @@ const Login = () => {
         {/* Liquid Chrome Background */}
         <div className="fixed inset-0 z-0">
           <LiquidChrome
-            baseColor={isAdminView ? [0.1, 0.1, 0.2] : [0.1, 0.2, 0.1]}
+            baseColor={[0.1, 0.2, 0.1]}
             speed={0.4}
             amplitude={0.3}
             interactive={true}
@@ -123,61 +113,25 @@ const Login = () => {
         </div>
 
         <div className="glass-card w-full max-w-md p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl relative z-10 transition-all duration-500 my-auto">
-          <div className="flex justify-center mb-6">
-            <div className="bg-gray-100 p-1 rounded-full flex">
-              <button
-                onClick={() => setIsAdminView(false)}
-                className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all ${!isAdminView ? "bg-indigo-600 text-white" : "text-gray-500"}`}
-              >
-                PUBLIC
-              </button>
-              <button
-                onClick={() => setIsAdminView(true)}
-                className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all ${isAdminView ? "bg-indigo-600 text-white" : "text-gray-500"}`}
-              >
-                ADMIN
-              </button>
-            </div>
-          </div>
 
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-black mb-2 transition-all">
-              {step === "credentials"
-                ? isAdminView
-                  ? "Admin Login"
-                  : "Login"
-                : "Enter OTP"}
+              {step === "credentials" ? "Login" : "Enter OTP"}
             </h1>
             <p className="text-gray-600 text-sm">
               {step === "credentials"
-                ? isAdminView
-                  ? "Secure administrative access portal."
-                  : "Welcome back! Please enter your details."
-                : `We sent a code to ${loginMethod === "phone" ? `${countryCode}${phoneNumber}` : emailForOtp}`}
+                ? "Welcome back! Please enter your details."
+                : (
+                  <>
+                    <span>We sent a code to {emailForOtp}</span>
+                  </>
+                )}
             </p>
           </div>
 
-          {step === "credentials" && (
-            <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
-              <button
-                onClick={() => setLoginMethod("password")}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${loginMethod === "password" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                Email OTP
-              </button>
-              <button
-                onClick={() => setLoginMethod("phone")}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${loginMethod === "phone" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                Phone OTP
-              </button>
-            </div>
-          )}
-
           {step === "credentials" ? (
             <form onSubmit={handleLogin} className="space-y-5">
-              {loginMethod === "password" ? (
-                <>
+              <div className="space-y-5">
                   <div>
                     <label
                       className="block text-sm font-medium text-gray-700 mb-2"
@@ -214,44 +168,7 @@ const Login = () => {
                       />
                     </div>
                   </div>
-                </>
-              ) : (
-                <div>
-                  <label
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                    htmlFor="phoneNumber"
-                  >
-                    Phone Number
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="w-1/3 sm:w-1/4">
-                      <input
-                        id="countryCode"
-                        type="text"
-                        placeholder="+91"
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-1 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-500"
-                        value={countryCode}
-                        onChange={(e) => setCountryCode(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <input
-                        id="phoneNumber"
-                        type="tel"
-                        placeholder="Phone Number"
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-1 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-500"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2">
-                    We'll send a one-time password to this number.
-                  </p>
-                </div>
-              )}
+              </div>
 
               <div className="flex items-center justify-between text-sm py-1">
                 <label className="flex items-center space-x-2 cursor-pointer">

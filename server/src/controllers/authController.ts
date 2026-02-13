@@ -1,13 +1,10 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User, { IUser } from "../models/User.js";
-import Admin, { IAdmin } from "../models/Admin.js";
+import User, { IUser } from "../models/Users.js";
 import { sendOTP, sendResetLink } from "../utils/emailService.js";
-import { sendSMS } from "../utils/smsService.js";
 import { AuthRequest } from "../middleware/auth.js";
 import crypto from "crypto";
-
 
 // Generate 6-digit OTP for email verification and 2FA
 const generateOTP = () =>
@@ -18,114 +15,87 @@ const hashOTP = (otp: string) =>
 // Handles new user registration, hashes passwords, and sends initial verification OTP
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, username, email, countryCode, phoneNumber, password, verificationMethod } = req.body;
-    let { role } = req.body;
-
-    // Sanitize role: explicitly allow only 'admin', everything else becomes 'user'
-    // This fixes issues where 'users' (plural) might be sent by frontend
-    if (role !== 'admin') {
-      role = 'user';
-    }
+    const { name, username, email, password } = req.body;
+    // IGNORE role from frontend - all new signups are 'user'
+    let role = "user";
 
     // Auto-promote first user to admin
-    const adminCount = await Admin.countDocuments();
-    if (adminCount === 0) {
-        console.log("No admins found. Promoting this user to Admin.");
-        role = 'admin';
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      console.log("No users found. Promoting this user to Admin.");
+      role = "admin";
     }
 
     // Sanitize inputs
     const sanitizedEmail = email ? email.toLowerCase().trim() : "";
     const sanitizedUsername = username ? username.trim() : "";
-    const sanitizedPhone = phoneNumber ? phoneNumber.trim() : "";
-
-    // Only set fullPhoneNumber if phoneNumber is provided and not empty
-    const fullPhoneNumber = sanitizedPhone
-      ? (countryCode ? `${countryCode}${sanitizedPhone}` : sanitizedPhone)
-      : undefined;
 
     // Use sanitized values
     const queryEmail = sanitizedEmail;
     const queryUsername = sanitizedUsername;
 
-    // Build the query for existing user check
-    const orQuery: any[] = [{ email: queryEmail }, { username: queryUsername }];
-    if (fullPhoneNumber) {
-        orQuery.push({ phoneNumber: fullPhoneNumber });
+    // Check if username already exists
+    const existingUsername = await User.findOne({ username: queryUsername });
+
+    if (existingUsername && existingUsername.isVerified) {
+      res.status(400).json({
+        message: "Username already taken",
+      });
+      return;
     }
 
-    // Check existing user in both collections
-    const existingInUser = await User.findOne({ $or: orQuery });
-    const existingInAdmin = await Admin.findOne({ $or: orQuery });
-    
-    const existing = existingInUser || existingInAdmin;
-    
-    if (existing) {
-      // If the existing user is already verified (either email or phone), reject signup
-      if (existing.isVerified || existing.isPhoneVerified) {
+    // Check if email already exists
+    const existingEmail = await User.findOne({ email: queryEmail });
+
+    if (existingEmail) {
+      // If the existing email is already verified, reject signup
+      if (existingEmail.isVerified) {
         res.status(400).json({
-          message: "User with this email, username, or phone number already exists",
+          message: `You already have a verified account with this email`,
         });
         return;
       }
-      
+
       // If not verified, delete the old unverified document to allow re-signup
-      console.log(`Cleaning up unverified existing user: ${existing.email || existing.username}`);
-      if (existingInUser) await User.deleteOne({ _id: existingInUser._id });
-      if (existingInAdmin) await Admin.deleteOne({ _id: existingInAdmin._id });
+      console.log(`Cleaning up unverified profile: ${existingEmail.email}`);
+      await User.deleteOne({ _id: existingEmail._id });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); 
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
-    const Model = role === 'admin' ? Admin : User;
-
-    const newUser = new Model({
+    const newUser = new User({
       name,
       username: queryUsername,
       email: queryEmail,
-      countryCode,
-      phoneNumber: fullPhoneNumber,
       password: hashedPassword,
       role: role,
     });
 
-    // Set OTP based on verification method
-    if (verificationMethod === 'phone') {
-      newUser.phoneOtp = hashOTP(otp);
-      newUser.phoneOtpExpires = otpExpires;
-      newUser.isVerified = false;
-      newUser.isPhoneVerified = false;
-    } else {
-      newUser.otp = hashOTP(otp);
-      newUser.otpExpires = otpExpires;
-      newUser.isVerified = false;
-      newUser.isPhoneVerified = false;
-    }
+    newUser.otp = hashOTP(otp);
+    newUser.otpExpires = otpExpires;
+    newUser.isVerified = false;
 
     await newUser.save();
     const logMsg = `New user created in database: ${newUser.email} (Role: ${newUser.role})`;
     console.log(logMsg);
 
-    // Send OTP based on verification method
+    // Send OTP
     try {
-      if (verificationMethod === 'phone' && fullPhoneNumber) {
-        await sendSMS(fullPhoneNumber, otp);
-      } else {
-        await sendOTP(queryEmail, otp);
-      }
+      await sendOTP(queryEmail, otp);
     } catch (sendError) {
-      console.error('Error sending OTP, but user was created:', sendError);
+      console.error("Error sending OTP, but user was created:", sendError);
       // We don't return here because the user is already saved.
       // The user can use "Resend OTP" if the initial sending failed.
     }
 
     res.status(201).json({
-      message: "Signup successful! Please verify your account with the OTP sent.",
+      message:
+        "Signup successful! Please verify your account with the OTP sent.",
     });
   } catch (error) {
-    console.error('Signup Error:', error);
+    console.error("Signup Error:", error);
     res.status(500).json({ message: "Something went wrong", error });
   }
 };
@@ -133,27 +103,22 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 // Shared verify OTP function (used for both email verification and login 2FA)
 export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, phoneNumber, otp } = req.body;
-    let user: IUser | IAdmin | null = await User.findOne(email ? { email } : { phoneNumber });
-    if (!user) {
-      user = await Admin.findOne(email ? { email } : { phoneNumber });
-    }
+    const { email, otp } = req.body;
+
+    const user = await User.findOne({ email });
 
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: `No user profile found for this email` });
       return;
     }
 
-    // Check if it's a phone OTP or email OTP
-    const isPhoneVerification = !!phoneNumber;
-    const savedOtp = isPhoneVerification ? user.phoneOtp : user.otp;
-    const savedOtpExpires = isPhoneVerification
-      ? user.phoneOtpExpires
-      : user.otpExpires;
+    // Check if it's a valid OTP
+    const savedOtp = user.otp;
+    const savedOtpExpires = user.otpExpires;
     const hashedIncomingOtp = hashOTP(otp);
 
     if (!savedOtp || savedOtp !== hashedIncomingOtp) {
-      const failMsg = `Invalid OTP attempt for ${email || phoneNumber}`;
+      const failMsg = `Invalid OTP attempt for ${email}`;
       console.warn(failMsg);
       res.status(400).json({ message: "Invalid OTP" });
       return;
@@ -165,15 +130,9 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Manage User status: Mark user as verified and clear OTP fields after successful verification
-    if (isPhoneVerification) {
-      user.isPhoneVerified = true;
-      user.phoneOtp = undefined;
-      user.phoneOtpExpires = undefined;
-    } else {
-      user.isVerified = true;
-      user.otp = undefined;
-      user.otpExpires = undefined;
-    }
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpires = undefined;
 
     await user.save();
 
@@ -183,12 +142,12 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
 
     // Generating JWT tokens for authentication: Sign a new token for the session
     const token = jwt.sign(
-      { email: user.email, phoneNumber: user.phoneNumber, id: user._id, role: user.role },
-      process.env.JWT_SECRET,
+      { email: user.email, id: user._id.toString(), role: user.role },
+      process.env.JWT_SECRET as string,
       { expiresIn: "1h" },
     );
 
-    const successMsg = `Authentication successful for ${user.email || user.phoneNumber}`;
+    const successMsg = `Authentication successful for ${user.email}`;
     console.log(successMsg);
 
     res
@@ -202,7 +161,6 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
 // Validates user credentials and triggers the Two-Factor Authentication (2FA) process by sending an OTP
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-
     let { identifier, password } = req.body; // identifier can be email or username
 
     if (!identifier || !password) {
@@ -211,39 +169,22 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     identifier = identifier.trim();
-    // Check if identifier looks like an email (has @), if so, lowercase it?
-    // Actually, if we stored email as lowercase, we must search lowercase.
-    // If it's a username, we stored it as trimmed. 
-    // Safest is to check both original (trimmed) and lowercase if it differs?
-    // But since we are enforcing lowercase email in signup (in my proposed change), 
-    // we should treat input as lowercase checking for email matches.
-
-    // Better approach: Regular regex or just rely on $or logic with specific fields
-    // But identifier is one field.
-    // If identifier is "User@Example.com", we should look for "user@example.com" in email field.
-    // If identifier is "UserName", we look for "UserName" in username field.
-    
-    // Simplification for reliability:
-    // If it contains '@', treat as email and lowercase it.
-    if (identifier.includes('@')) {
-        identifier = identifier.toLowerCase();
+    // Check if identifier looks like an email (has @), if so, lowercase it
+    if (identifier.includes("@")) {
+      identifier = identifier.toLowerCase();
     }
 
-    // Find user by email OR username in both collections
-    let user: IUser | IAdmin | null = await User.findOne({
+    // Find user by identifier (email or username)
+    const user = await User.findOne({
       $or: [{ email: identifier }, { username: identifier }],
     });
-    if (!user) {
-      user = await Admin.findOne({
-        $or: [{ email: identifier }, { username: identifier }],
-      });
-    }
 
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
     }
 
+    // Verify password
     const isPasswordCorrect = await bcrypt.compare(
       password,
       user.password as string,
@@ -260,14 +201,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     user.otp = hashOTP(otp); // Store hashed OTP for security
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
-    // Self-heal: Fix invalid role if it exists in DB (e.g. 'users' -> 'user')
-    // This prevents validation errors when saving the user with an OTP
-    if ((user as any).role === 'users') {
-        user.role = 'user';
-    }
-
     await user.save();
-    const otpMsg = `2FA OTP sent to ${user.email} (Category: ${user.role})`;
+    const otpMsg = `2FA OTP sent to ${user.email} (Role: ${user.role})`;
     console.log(otpMsg);
 
     await sendOTP(user.email, otp);
@@ -276,10 +211,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({
       message: "Credentials valid. OTP sent to your email.",
       email: user.email,
-      requiresOtp: true,
+      currentRole: user.role,
     });
   } catch (error) {
-    console.error('Login Error:', error);
+    console.error("Login Error:", error);
     res.status(500).json({ message: "Something went wrong", error });
   }
 };
@@ -287,11 +222,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 // Generates and sends a new OTP if the previous one expired or was not received
 export const resendOtp = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, phoneNumber } = req.body;
-    let user: IUser | IAdmin | null = await User.findOne(email ? { email } : { phoneNumber });
-    if (!user) {
-      user = await Admin.findOne(email ? { email } : { phoneNumber });
-    }
+    const { email } = req.body;
+    const user = await User.findOne({ email });
 
     if (!user) {
       res.status(404).json({ message: "User not found" });
@@ -300,17 +232,10 @@ export const resendOtp = async (req: Request, res: Response): Promise<void> => {
 
     const otp = generateOTP();
 
-    if (phoneNumber) {
-      user.phoneOtp = hashOTP(otp);
-      user.phoneOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-      await user.save();
-      await sendSMS(phoneNumber, otp);
-    } else {
-      user.otp = hashOTP(otp);
-      user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-      await user.save();
-      await sendOTP(user.email, otp);
-    }
+    user.otp = hashOTP(otp);
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    await user.save();
+    await sendOTP(user.email, otp);
 
     res.status(200).json({ message: "OTP resent successfully" });
   } catch (error) {
@@ -325,10 +250,7 @@ export const forgotPassword = async (
 ): Promise<void> => {
   try {
     const { email } = req.body;
-    let user: IUser | IAdmin | null = await User.findOne({ email });
-    if (!user) {
-      user = await Admin.findOne({ email });
-    }
+    const user = await User.findOne({ email });
 
     if (!user) {
       res.status(404).json({ message: "User not found" });
@@ -379,16 +301,10 @@ export const resetPassword = async (
       .update(token)
       .digest("hex");
 
-    let user: IUser | IAdmin | null = await User.findOne({
+    const user = await User.findOne({
       resetPasswordToken: resetTokenHash,
       resetPasswordExpires: { $gt: new Date() },
     });
-    if (!user) {
-      user = await Admin.findOne({
-        resetPasswordToken: resetTokenHash,
-        resetPasswordExpires: { $gt: new Date() },
-      });
-    }
 
     if (!user) {
       res.status(400).json({ message: "Invalid or expired token" });
@@ -417,13 +333,13 @@ export const getProfile = async (
       return;
     }
 
-    let user: IUser | IAdmin | null = await User.findById(req.userId).select(
-      "-password -otp -phoneOtp -resetPasswordToken -resetPasswordExpires",
-    );
-    if (!user) {
-      user = await Admin.findById(req.userId).select(
-        "-password -otp -phoneOtp -resetPasswordToken -resetPasswordExpires",
-      );
+    const user = await User.findById(req.userId);
+    const safeUser = user ? user.toObject() : null;
+    if (safeUser) {
+      delete safeUser.password;
+      delete safeUser.otp;
+      delete safeUser.resetPasswordToken;
+      delete safeUser.resetPasswordExpires;
     }
 
     if (!user) {
@@ -447,29 +363,26 @@ export const updateProfile = async (
       return;
     }
 
-    const {
-      name,
-      username,
-      email,
-      countryCode,
-      phoneNumber,
-      currentPassword,
-      newPassword,
-    } = req.body as {
-      name?: string;
-      username?: string;
-      email?: string;
-      countryCode?: string;
-      phoneNumber?: string;
-      currentPassword?: string;
-      newPassword?: string;
+    const { name, username, email, currentPassword, newPassword } =
+      req.body as {
+        name?: string;
+        username?: string;
+        email?: string;
+        currentPassword?: string;
+        newPassword?: string;
+      };
+
+    const user = await User.findById(req.userId);
+
+    // Check duplication
+    const checkUsername = async (u: string) => {
+      return await User.findOne({ username: u, _id: { $ne: req.userId } });
     };
 
-    let user: IUser | IAdmin | null = await User.findById(req.userId);
-    if (!user) {
-      user = await Admin.findById(req.userId);
-    }
-    
+    const checkEmail = async (e: string) => {
+      return await User.findOne({ email: e, _id: { $ne: req.userId } });
+    };
+
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
@@ -480,15 +393,7 @@ export const updateProfile = async (
     }
 
     if (username && username !== user.username) {
-      const existingUsernameInUser = await User.findOne({
-        username,
-        _id: { $ne: req.userId },
-      });
-      const existingUsernameInAdmin = await Admin.findOne({
-        username,
-        _id: { $ne: req.userId },
-      });
-      if (existingUsernameInUser || existingUsernameInAdmin) {
+      if (await checkUsername(username)) {
         res.status(400).json({ message: "Username is already in use" });
         return;
       }
@@ -496,38 +401,12 @@ export const updateProfile = async (
     }
 
     if (email && email !== user.email) {
-      const existingEmailInUser = await User.findOne({ email, _id: { $ne: req.userId } });
-      const existingEmailInAdmin = await Admin.findOne({ email, _id: { $ne: req.userId } });
-      if (existingEmailInUser || existingEmailInAdmin) {
+      if (await checkEmail(email)) {
         res.status(400).json({ message: "Email is already in use" });
         return;
       }
       user.email = email;
       user.isVerified = false;
-    }
-
-    const normalizedCountryCode = countryCode ?? user.countryCode ?? "";
-    if (phoneNumber) {
-      const fullPhoneNumber = `${normalizedCountryCode}${phoneNumber}`;
-      if (fullPhoneNumber !== user.phoneNumber) {
-        const existingPhoneInUser = await User.findOne({
-          phoneNumber: fullPhoneNumber,
-          _id: { $ne: req.userId },
-        });
-        const existingPhoneInAdmin = await Admin.findOne({
-          phoneNumber: fullPhoneNumber,
-          _id: { $ne: req.userId },
-        });
-        if (existingPhoneInUser || existingPhoneInAdmin) {
-          res.status(400).json({ message: "Phone number is already in use" });
-          return;
-        }
-        user.phoneNumber = fullPhoneNumber;
-        user.countryCode = normalizedCountryCode;
-        user.isPhoneVerified = false;
-      }
-    } else if (countryCode) {
-      user.countryCode = countryCode;
     }
 
     if (newPassword) {
@@ -551,90 +430,149 @@ export const updateProfile = async (
     await user.save();
 
     const safeUser = await User.findById(req.userId).select(
-      "-password -otp -phoneOtp -resetPasswordToken -resetPasswordExpires",
+      "-password -otp -resetPasswordToken -resetPasswordExpires",
     );
 
-    res.status(200).json({ message: "Profile updated successfully", user: safeUser });
+    res
+      .status(200)
+      .json({ message: "Profile updated successfully", user: safeUser });
   } catch (error) {
     res.status(500).json({ message: "Something went wrong", error });
   }
 };
 
-// Login with Phone OTP
-export const loginWithPhone = async (
+export const getAdminStats = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    let { countryCode, phoneNumber } = req.body;
-    phoneNumber = phoneNumber ? phoneNumber.trim() : "";
-    const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-
-    let user: IUser | IAdmin | null = await User.findOne({ phoneNumber: fullPhoneNumber });
-    if (!user) {
-      user = await Admin.findOne({ phoneNumber: fullPhoneNumber });
-    }
-    if (!user) {
-      res
-        .status(404)
-        .json({ message: "User with this phone number not found" });
-      return;
-    }
-
-    const otp = generateOTP();
-    user.phoneOtp = hashOTP(otp);
-    user.phoneOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-    await user.save();
-
-    await sendSMS(fullPhoneNumber, otp);
-
-    res.status(200).json({
-      message: "OTP sent to your phone number",
-      phoneNumber: user.phoneNumber,
-      requiresOtp: true,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Something went wrong", error });
-  }
-};
-
-
-
-export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
-  try {
     const totalUsers = await User.countDocuments();
-    const totalAdmins = await Admin.countDocuments();
+    
     res.status(200).json({
-      totalUsers: totalUsers + totalAdmins,
-      activeUsers: Math.floor((totalUsers + totalAdmins) * 0.1) + 1,
+      totalUsers,
+      activeUsers: Math.floor(totalUsers * 0.1) + 1, // Mock logic from original code
       securityAlerts: 0,
-      systemUptime: '99.9%'
+      systemUptime: "99.9%",
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch stats", error });
   }
 };
 
-export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
+// Overview endpoint for any authenticated user. Returns unique totals and a small sample of users.
+export const getOverview = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
-    const users = await User.find({}, '-password').sort({ createdAt: -1 });
-    const admins = await Admin.find({}, '-password').sort({ createdAt: -1 });
-    
-    // Combine and sort by creation date
-    const allUsers = [...users, ...admins].sort((a: any, b: any) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const users = await User.find(
+      {},
+      "email username name role isVerified createdAt",
+    ).sort({ createdAt: -1 }).lean();
 
-    res.status(200).json({ users: allUsers });
+    // Return a small sample (first 2) to show on overview cards, and the total unique count
+    const sample = users.slice(0, 2).map((u: any) => ({
+      _id: u._id,
+      name: u.name || u.username,
+      username: u.username,
+      email: u.email,
+      role: u.role,
+      isVerified: u.isVerified,
+      createdAt: u.createdAt,
+    }));
+
+    res.status(200).json({
+      totalUsers: users.length,
+      activeUsers: Math.floor(users.length * 0.1) + 1,
+      securityAlerts: 0,
+      systemUptime: "99.9%",
+      users: sample,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch overview", error });
+  }
+};
+
+export const getAllUsers = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const users = await User.find({}, "-password").sort({ createdAt: -1 });
+
+    res.status(200).json({ users });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch users", error });
   }
 };
 
-export const getServerLogs = async (req: Request, res: Response): Promise<void> => {
+export const getServerLogs = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     res.status(200).json({ logs: [] });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch logs", error });
+  }
+};
+
+// Admin-only role management
+export const updateUserRole = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    // Verify requester is admin (Middleware usually handles this or check below)
+    
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    // Validate role
+    const validRoles = ["user", "author", "editor", "admin"];
+    if (!validRoles.includes(role)) {
+      res.status(400).json({
+        message: "Invalid role. Must be one of: user, author, editor, admin",
+      });
+      return;
+    }
+
+    // Permission Check: Only Admins can promote to Admin
+    if (role === "admin" && req.userRole !== "admin") {
+      res.status(403).json({ message: "Access denied. Only Admins can promote users to Admin." });
+      return;
+    }
+
+    const userDoc = await User.findById(userId);
+
+    if (!userDoc) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    const oldRole = userDoc.role;
+
+    // Protection: Non-admins cannot modify existing Admins
+    if (oldRole === "admin" && req.userRole !== "admin") {
+      res.status(403).json({ message: "Access denied. You cannot modify an Admin account." });
+      return;
+    }
+
+    // If the role is the same, just return
+    if (oldRole === role) {
+      res
+        .status(200)
+        .json({ message: "Role is already " + role, user: userDoc });
+      return;
+    }
+
+    // Update role
+    userDoc.role = role;
+    await userDoc.save();
+
+    res.status(200).json({ message: "Role updated successfully", user: userDoc });
+
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update role", error });
   }
 };

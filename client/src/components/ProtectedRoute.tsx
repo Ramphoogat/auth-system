@@ -1,11 +1,9 @@
-import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
+import type { UserRole, DashboardType } from '../utils/rolePermissions';
+import { canAccessDashboard, getDefaultDashboard } from '../utils/rolePermissions';
+import { decodeJwt } from '../utils/jwtUtils';
 
-interface ProtectedRouteProps {
-  allowedRoles?: string[];
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
+const ProtectedRoute = ({ allowedRoles, requiredDashboard }: { allowedRoles?: UserRole[], requiredDashboard?: DashboardType }) => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   
   if (!token) {
@@ -13,13 +11,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
   }
 
   try {
-    // Decode JWT to check role
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userRole = payload.role;
+    // Decode JWT to check role using the robust utility
+    const payload = decodeJwt(token);
+    
+    if (!payload) {
+      throw new Error('Invalid token payload');
+    }
 
+    const userRole = payload.role as UserRole;
+
+    // Check role-based access
     if (allowedRoles && !allowedRoles.includes(userRole)) {
-      // Redirect to appropriate dashboard based on their actual role
-      return <Navigate to={userRole === 'admin' ? '/admin/dashboard' : '/dashboard'} replace />;
+      // Redirect to their default dashboard
+      const defaultPath = getDefaultDashboard(userRole);
+      return <Navigate to={defaultPath} replace />;
+    }
+
+    // Check dashboard-specific access
+    if (requiredDashboard && !canAccessDashboard(userRole, requiredDashboard)) {
+      // Redirect to their default dashboard
+      const defaultPath = getDefaultDashboard(userRole);
+      return <Navigate to={defaultPath} replace />;
     }
 
     return <Outlet />;

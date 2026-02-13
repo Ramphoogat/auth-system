@@ -10,21 +10,37 @@ const VerifyOtp: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';
-  const phoneNumber = location.state?.phoneNumber || '';
-  const method = location.state?.method || (phoneNumber ? 'phone' : 'email');
+  const role = location.state?.role || 'user'; // Get role from Signup or default to 'user'
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const payload = method === 'phone' ? { phoneNumber, otp } : { email, otp };
+      const payload = { 
+        email, 
+        otp,
+        role // Send role so backend knows which profile to verify
+      };
       const { data } = await api.post('/auth/verify-otp', payload);
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.result.role);
       
-      if (data.result.role === 'admin') {
+      // Redirect based on the verified role
+      const userRole = data.result.role;
+      console.log('Verification successful. User role:', userRole);
+      
+      if (userRole === 'admin') {
+        console.log('Navigating to admin dashboard');
         navigate('/admin/dashboard');
+      } else if (userRole === 'author') {
+        console.log('Navigating to author dashboard');
+        navigate('/author/dashboard');
+      } else if (userRole === 'editor') {
+        console.log('Navigating to editor dashboard');
+        navigate('/editor/dashboard');
       } else {
+        console.log('Navigating to default dashboard');
         navigate('/dashboard');
       }
     } catch (error: unknown) {
@@ -40,7 +56,7 @@ const VerifyOtp: React.FC = () => {
 
   const handleResendOtp = async () => {
       try {
-          const payload = method === 'phone' ? { phoneNumber } : { email };
+          const payload = { email };
           await api.post('/auth/resend-otp', payload);
           alert('OTP resent successfully!');
       } catch (error: unknown) {
@@ -66,8 +82,8 @@ const VerifyOtp: React.FC = () => {
             <div className="glass-card shadow-2xl rounded-3xl p-10 transition-all duration-300 relative">
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold text-black mb-2">Verify OTP</h1>
-                    <p className="text-gray-600">Enter the code sent to your <span className="font-semibold">{method === 'phone' ? 'phone' : 'email'}</span></p>
-                    <p className="text-xs text-gray-400 mt-1">{method === 'phone' ? phoneNumber : email}</p>
+                    <p className="text-gray-600">Enter the code sent to your <span className="font-semibold">email</span></p>
+                    <p className="text-xs text-gray-400 mt-1">{email}</p>
                 </div>
                 
                 <form onSubmit={handleSubmit} className="space-y-6">

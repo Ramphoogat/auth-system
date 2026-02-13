@@ -9,12 +9,17 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
 app.use(cors({
     origin: process.env.CLIENT_URL || "*", 
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));
 app.use(express.json());
+
+// Handle favicon and meta.json to prevent 404s
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+app.get('/meta.json', (req, res) => res.status(204).end());
 
 // Routes
 app.use("/api/auth", authRoutes);
