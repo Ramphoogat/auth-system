@@ -16,9 +16,9 @@ const PrivacyPolicy: React.FC = () => {
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
                         </button>
-                    </div>
+                    </div>  
                     
-                    <div className="overflow-y-auto pr-4 space-y-1 text-gray-700 custom-scrollbar flex-grow">
+                    <div className="overflow-y-auto pr-4 space-y-1 text-gray-700  flex-grow">
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 mb-2">1. Information Collection</h2>
                             <p>We collect information you provide directly to us when you create an account, specifically your name, username, and email address.</p>

@@ -1,165 +1,214 @@
-# Auth & Dashboard System (MERN Stack)
+# Full Stack Authentication & Role-Based Dashboard Boilerplate
 
-A full-stack authentication and dashboard application built with the MERN stack (MongoDB, Express, React, Node.js). This project features a robust authentication system with role-based access control (RBAC), OTP verification, and a rich "Desktop Environment" style UI for the admin dashboard.
+This repository contains a rigorous, production-ready Full Stack Authentication System with a specialized Role-Based Access Control (RBAC) Dashboard. It is split into two main parts: a **Client** (React frontend) and a **Server** (Node.js/Express backend).
 
-## 🚀 Features
-
-- **Authentication & Security**:
-  - User & Admin Signup/Login
-  - Email OTP Verification
-  - Forgot/Reset Password Flow
-  - JWT-based session management
-  - Role-Based Access Control (Admin vs. User routes)
-- **Frontend UI (Desktop OS Style)**:
-  - Interactive Desktop Environment (Start Menu, Taskbar, Windows)
-  - Draggable & Resizable Windows
-  - Terminal, Control Center, and Notification System
-  - Dark/Light mode support (via system/settings)
-- **Backend**:
-  - RESTful API architecture
-  - MongoDB with Mongoose schemas
-  - Secure password hashing (bcryptjs)
-
-## 🛠 Tech Stack
-
-### Client (Frontend)
-
-- **Framework**: React (Vite)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Routing**: React Router DOM
-- **State/HTTP**: Axios, Context API
-- **Icons**: React Icons
-
-### Server (Backend)
-
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB (Mongoose)
-- **Authentication**: JSON Web Tokens (JWT), bcryptjs
-- **Email Services**: Nodemailer / Resend
+This project demonstrates a complete user lifecycle, from secure registration to role-specific dashboard access, all wrapped in a premium, modern UI.
 
 ---
 
-## 🗺️ Structured Map & Architecture
+## 1. Project Architecture & Features
 
-This map illustrates the relationship between Pages, Components, and Backend Services.
+### Client-Side (Frontend)
 
-```mermaid
-graph TD
-    subgraph Frontend_Client
-        A[App.tsx] --> R[Routes]
+Built with **React 19**, **Vite**, and **Tailwind CSS v4**, focusing on performance and a high-end user experience.
 
-        %% Public Routes
-        R --> Login[Login Page]
-        R --> Signup[Signup Page]
-        R --> OTP[VerifyOtp Page]
-        R --> Forgot[Forgot Password]
+#### **Key Features:**
 
-        %% Protected Routes
-        R --> P_Guard{Protected Route}
-        P_Guard -->|Role: User| UserDash[Public Dashboard]
-        P_Guard -->|Role: Admin| AdminDash[Admin Dashboard]
+- **Authentication Hub:**
+  - **Login & Signup:** sleek forms with real-time validation.
+  - **Forgot Password:** initiating password reset via email.
+  - **OTP Verification:** secure 6-digit code entry for account verification.
+  - **Reset Password:** final step in the account recovery process.
+- **Role-Based Dashboards:**
+  - **Dashboard Switcher:** unique component to simulate different user roles (Admin, Author, Editor, User) instantly.
+  - **Persistent Layout:** sidebar navigation that adapts based on the active role.
+  - **Role-Specific Pages:**
+    - **Admin Dashboard:** system analytics, user management, and global settings.
+    - **Author Dashboard:** content creation tools and draft management.
+    - **Editor Dashboard:** review queues and editorial tools.
+    - **User Dashboard:** basic profile and activity usage.
+- **Advanced UI/UX:**
+  - **Liquid Chrome Background:** a WebGL-powered, interactive background using OGL.
+  - **Theme System:** toggle between Light and Dark modes with persistent preference storage.
+  - **Notification Center:** a robust toast and notification system for non-intrusive alerts.
+  - **Profile Management:** modal-based profile editing for streamlined user updates.
 
-        %% Admin Dashboard Components (Desktop OS UI)
-        AdminDash --> Desktop[Desktop Component]
-        Desktop --> Taskbar[TaskBar]
-        Desktop --> AppWindow[App Window System]
-        Desktop --> StartMenu[Start Menu]
-        Desktop --> ControlCenter[Control Center]
-        Desktop --> Terminal[Terminal App]
-    end
+### Server-Side (Backend)
 
-    subgraph Backend_Server
-        API[API Routes /api/auth]
+Built with **Node.js**, **Express v5**, and **TypeScript**, ensuring type safety and scalability.
 
-        Login -->|POST /login| API
-        Signup -->|POST /signup| API
-        OTP -->|POST /verify| API
+#### **Key Features:**
 
-        API --> AuthC[Auth Controller]
-        AuthC --> UserM[(User Model)]
-        AuthC --> AdminM[(Admin Model)]
-    end
+- **Security First:**
+  - **JWT Authentication:** stateless, secure token-based session handling.
+  - **Bcrypt Hashing:** industry-standard password encryption.
+  - **Middleware Protection:** custom middleware to protect routes and verify user roles.
+- **Data Management:**
+  - **MongoDB & Mongoose:** flexible schema modeling for Users and System Settings.
+- **Communication:**
+  - **Email Service:** integrated `nodemailer` / `resend` for transactional emails (OTPs, localized notifications).
+- **API Structure:**
+  - **MVC Pattern:** clean separation of Models, Views (Response logic), and Controllers.
+  - **Modular Routes:** dedicated route files for Auth and Settings.
+
+---
+
+## 2. Project File Structure
+
+Below is the comprehensive map of the file structure for both Client and Server.
+
+### Root Directory
+
+```
+/root
+├── client/                 # React Frontend Application
+├── server/                 # Node.js Backend Application
+├── PROJECT_REPORT.md       # Detailed project status report
+└── README.md               # This documentation file
 ```
 
-### 📂 File Structure & Connections
+### Client Structure (`/client`)
 
-#### **Client (`/client/src`)**
+The frontend is organized for scalability, with distinct separation for common components and role-specific pages.
 
-- **`App.tsx`** (Main Entry)
-  - ├── **`pages/`**
-  - │ ├── `Login.tsx` (Auth Entry)
-  - │ ├── `Signup.tsx` (Auth Entry)
-  - │ ├── `VerifyOtp.tsx` (Step 2 of Auth)
-  - │ ├── `publicDashboard.tsx` (User View)
-  - │ └── **`admin/`**
-  - │ └── `adminDashboard.tsx` (The "OS" Interface)
-  - └── **`components/`**
-  -       ├── `ProtectedRoute.tsx` (Security Guard)
-  -       ├── `Desktop.tsx` (Main Layout for Admin)
-  -       ├── `TaskBar.tsx` (Navigation)
-  -       ├── `AppWindow.tsx` (Window functionality)
-  -       ├── `Terminal.tsx` (Interactive CLI UI)
-  -       └── `ControlCenter.tsx` (Quick Settings)
+```
+/client
+├── package.json
+├── src/
+│   ├── components/                 # Reusable UI Components
+│   │   ├── DashboardLayout.tsx     # Main wrapper with Sidebar/Params
+│   │   ├── DashboardSwitcher.tsx   # Role switching controls
+│   │   ├── LiquidChrome.tsx        # WebGL Background effect
+│   │   ├── NotificationCenter.tsx  # Notification history/list
+│   │   ├── NotificationToast.tsx   # Individual toast item
+│   │   ├── Profile.tsx             # User profile display
+│   │   ├── ProfileEditModal.tsx    # Edit profile form modal
+│   │   ├── ProtectedRoute.tsx      # Auth guard wrapper
+│   │   ├── Settings.tsx            # App-wide settings UI
+│   │   ├── ThemeToggle.tsx         # Dark/Light mode switch
+│   │   ├── Toast.tsx               # Toast primitives
+│   │   └── ToastProvider.tsx       # Context for toast system
+│   │
+│   ├── pages/                      # Page Definitions
+│   │   ├── Login.tsx               # Login screen
+│   │   ├── Signup.tsx              # Registration screen
+│   │   ├── ForgotPassword.tsx      # Recovery init screen
+│   │   ├── ResetPassword.tsx       # New password entry
+│   │   ├── VerifyOtp.tsx           # OTP entry screen
+│   │   ├── PrivacyPolicy.tsx       # Static legal page
+│   │   ├── TermsOfService.tsx      # Static legal page
+│   │   │
+│   │   ├── admin/                  # Admin-specific Views
+│   │   │   ├── adminDashboard.tsx
+│   │   │   ├── AdminComponents.tsx
+│   │   │   └── Settings.tsx
+│   │   │
+│   │   ├── author/                 # Author-specific Views
+│   │   │   ├── authorDashboard.tsx
+│   │   │   └── AuthorComponents.tsx
+│   │   │
+│   │   ├── editor/                 # Editor-specific Views
+│   │   │   ├── editorDashboard.tsx
+│   │   │   └── EditorComponents.tsx
+│   │   │
+│   │   └── users/                  # Standard User Views
+│   │       ├── userDashboard.tsx
+│   │       └── UsersComponents.tsx
+│   │
+│   ├── App.tsx                     # Main Router configuration
+│   └── main.tsx                    # Entry point
+```
 
-#### **Server (`/server/src`)**
+### Server Structure (`/server`)
 
-- **`index.ts`** (Server Entry)
-  - └── **`routes/`**
-    - └── `authRoutes.ts` (Defines API Endpoints)
-      - └── `POST /register`
-      - └── `POST /login`
-      - └── `POST /verify-otp`
-  - └── **`controllers/`**
-    - └── `authController.ts` (Business Logic) (Brain of the server)
-  - └── **`models/`**
-    - ├── `User.ts` (Schema for Standard Users)
-    - └── `Admin.ts` (Schema for Privileged Users)
+The back-end follows a strict Controller-Service-Model architecture.
+
+```
+/server
+├── package.json
+├── App.ts                          # App Entry point (Express setup)
+├── src/
+│   ├── controllers/                # Request Handlers
+│   │   ├── authController.ts       # Login, Signup, OTP logic
+│   │   └── settingsController.ts   # System config handlers
+│   │
+│   ├── middleware/                 # Request Interceptors
+│   │   └── auth.ts                 # JWT verification & Role checks
+│   │
+│   ├── models/                     # Database Schemas (Mongoose)
+│   │   ├── Users.ts                # User data model
+│   │   └── SystemSettings.ts       # Global app settings model
+│   │
+│   ├── routes/                     # API Endpoint Definitions
+│   │   ├── authRoutes.ts           # /api/auth endpoints
+│   │   └── settings.ts             # /api/settings endpoints
+│   │
+│   └── utils/                      # Helper Functions
+│       ├── emailService.ts         # Email sending logic
+│       └── roleDelegation.ts       # Role utility functions
+```
 
 ---
 
-## ⚡ Getting Started
+## 3. Getting Started
 
-### 1. Prerequisites
+### Prerequisites
 
 - Node.js (v18+)
-- MongoDB (Local or Atlas URI)
+- MongoDB (Local or Atlas)
+- npm or pnpm
 
-### 2. Installation
+### Running the Client
 
-**Clone the repository:**
+1.  Navigate to the client directory:
+    ```bash
+    cd client
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
+    _The app will be available at `http://localhost:5173`._
 
-```bash
-git clone <repository_url>
-cd <project_directory>
-```
+### Running the Server
 
-**Setup Server:**
+1.  Navigate to the server directory:
+    ```bash
+    cd server
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Set up your `.env` file (copy from `.env.example` if available) with:
+    - `PORT`
+    - `MONGO_URI`
+    - `JWT_SECRET`
+4.  Start the server:
+    ```bash
+    npm run dev
+    ```
+    _The server will run on `http://localhost:5000` (or your configured port)._
 
-```bash
-cd server
-npm install
-# Create .env file
-echo "MONGO_URI=your_mongodb_uri" > .env
-echo "JWT_SECRET=your_secret_key" >> .env
-echo "PORT=5000" >> .env
-npm run dev
-```
+---
 
-**Setup Client:**
+## 4. API Documentation Summary
 
-```bash
-cd client
-npm install
-npm run dev
-```
+### Auth Endpoints (`/api/auth`)
 
-### 3. Usage
+- `POST /signup`: Register a new user.
+- `POST /login`: Authenticate and receive a JWT.
+- `POST /verify-otp`: Verify account email.
+- `POST /forgot-password`: Request a password reset link.
+- `POST /reset-password`: Set a new password.
 
-- **User Flow**: Signup -> Verify OTP -> Login -> Redirect to Public Dashboard.
-- **Admin Flow**: Login (as Admin) -> Redirect to Admin Dashboard (Desktop UI).
+### Settings Endpoints (`/api/settings`)
 
-## 📜 License
+- `GET /`: Retrieve global system settings.
+- `PUT /`: Update system settings (Admin only).
 
-[MIT](LICENSE)
+---

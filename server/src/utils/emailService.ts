@@ -48,7 +48,7 @@ export const sendOTP = async (email: string, otp: string) => {
   }
 
   try {
-    // console.log(`📧 Attempting to send OTP to: ${email}...`);
+    // console.log(` Attempting to send OTP to: ${email}...`);
     const { data, error } = await getResend().emails.send({
       from: 'Auth System <onboarding@resend.dev>',
       to: email,
@@ -58,11 +58,11 @@ export const sendOTP = async (email: string, otp: string) => {
     });
 
     if (error) {
-      console.error('❌ Resend API Error Details:', JSON.stringify(error, null, 2));
+      console.error('Resend API Error Details:', JSON.stringify(error, null, 2));
       
       if ((error as any).statusCode === 403 || (error as any).name === 'validation_error') {
-        // console.warn('⚠️ RESEND SANDBOX RESTRICTION: Email not sent to recipient.');
-        // console.warn(`👉 [DEV ONLY] YOUR OTP IS: ${otp}`);
+        // console.warn(' RESEND SANDBOX RESTRICTION: Email not sent to recipient.');
+        // console.warn(` [DEV ONLY] YOUR OTP IS: ${otp}`);
         console.warn('To fix this, verify your domain at resend.com or use the verified email: raam.phogat@gmail.com');
         return { id: 'sandbox-fallback', otp }; // Return a mock success so flow continues in dev
       }
@@ -70,11 +70,11 @@ export const sendOTP = async (email: string, otp: string) => {
       throw new Error(error.message);
     }
 
-    // console.log(`✅ OTP successfully sent to ${email} via Resend. ID: ${data?.id}`);
+    // console.log(` OTP successfully sent to ${email} via Resend. ID: ${data?.id}`);
     return data;
   } catch (error: any) {
     if (error.id === 'sandbox-fallback') return error;
-    console.error('❌ Error in sendOTP:', error.message);
+    console.error('Error in sendOTP:', error.message);
     throw error;
   }
 };
@@ -85,7 +85,7 @@ export const sendResetLink = async (email: string, link: string) => {
   }
 
   try {
-    // console.log(`📧 Attempting to send Reset Link to: ${email}...`);
+    // console.log(` Attempting to send Reset Link to: ${email}...`);
     const { data, error } = await getResend().emails.send({
       from: 'Auth System <onboarding@resend.dev>',
       to: email,
@@ -95,12 +95,12 @@ export const sendResetLink = async (email: string, link: string) => {
     });
 
     if (error) {
-      console.error('❌ Resend API Error (Reset Link):', JSON.stringify(error, null, 2));
+      console.error('Resend API Error (Reset Link):', JSON.stringify(error, null, 2));
 
       // Fallback for development/sandbox mode
       if ((error as any).statusCode === 403 || (error as any).name === 'validation_error') {
-        // console.warn('⚠️ RESEND SANDBOX RESTRICTION: Email not sent to recipient.');
-        // console.warn(`👉 [DEV ONLY] YOUR RESET LINK IS: ${link}`);
+        // console.warn(' RESEND SANDBOX RESTRICTION: Email not sent to recipient.');
+        // console.warn(` [DEV ONLY] YOUR RESET LINK IS: ${link}`);
         console.warn('To fix this, verify your domain at resend.com or use the verified email: raam.phogat@gmail.com');
         return { id: 'sandbox-fallback', link }; // Return a mock success so flow continues in dev
       }
@@ -108,11 +108,11 @@ export const sendResetLink = async (email: string, link: string) => {
       throw new Error(error.message);
     }
 
-    // console.log(`✅ Reset link successfully sent to ${email} via Resend. ID: ${data?.id}`);
+    // console.log(` Reset link successfully sent to ${email} via Resend. ID: ${data?.id}`);
     return data;
   } catch (error: any) {
     if (error.id === 'sandbox-fallback') return error;
-    console.error('❌ Error in sendResetLink:', error.message);
+    console.error('Error in sendResetLink:', error.message);
     throw error;
   }
 };

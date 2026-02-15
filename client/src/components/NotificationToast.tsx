@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { useNotifications, type Notification } from '../context/NotificationContext';
+import React, { useEffect, useState } from "react";
+import {
+  useNotifications,
+  type Notification,
+} from "../context/NotificationContext";
 
 const NotificationToast: React.FC = () => {
   const { notifications } = useNotifications();
@@ -28,14 +31,26 @@ const NotificationToast: React.FC = () => {
         <div className="flex justify-between items-center mb-1">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="text-white font-bold text-[13px]">{activeToast.title}</span>
+            <span className="text-white font-bold text-[13px]">
+              {activeToast.title}
+            </span>
           </div>
-          <button 
+          <button
             onClick={() => setActiveToast(null)}
             className="text-white/40 hover:text-white transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>

@@ -2,7 +2,8 @@ import React, { useState, type ChangeEvent } from "react";
 import api from "../api/axios";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import LiquidChrome from "../components/LiquidChrome";
+import LightRays from "../components/LightRays";
+import ThemeToggle from "../components/ThemeToggle";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -63,21 +64,35 @@ const Signup = () => {
   };
 
   return (
-    <div className="font-display antialiased m-0 p-0 flex h-screen bg-gray-900 relative py-6 overflow-y-auto no-scrollbar">
-      {/* Liquid Chrome Background */}
+    <div className="font-display antialiased m-0 p-0 flex min-h-screen bg-gray-900 relative py-12 md:py-20 overflow-y-auto no-scrollbar">
+      {/* Theme Toggle in Corner */}
+      <div className="fixed top-6 right-6 z-20">
+        <ThemeToggle />
+      </div>
+
+      {/* LightRays Background */}
       <div className="fixed inset-0 z-0">
-        <LiquidChrome
-          baseColor={[0.1, 0.2, 0.1]}
-          speed={0.4}
-          amplitude={0.3}
-          interactive={true}
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#ffffff"
+          raysSpeed={1}
+          lightSpread={0.5}
+          rayLength={3}
+          followMouse={true}
+          mouseInfluence={0.1}
+          noiseAmount={0}
+          distortion={0}
+          className="custom-rays"
+          pulsating={false}
+          fadeDistance={1}
+          saturation={1}
         />
       </div>
       <div className="w-full max-w-md px-4 z-10 mx-auto my-auto">
-        <div className="glass-card shadow-2xl rounded-2xl p-6 sm:p-8 md:p-10 transition-all duration-300 relative">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 shadow-2xl rounded-[32px] p-6 sm:p-8 md:p-10 transition-all duration-500 relative">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-black mb-2">Signup</h1>
-            <p className="text-slate-500 text-sm">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Signup</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               Create your account to get started
             </p>
           </div>
@@ -93,7 +108,7 @@ const Signup = () => {
                 type="text"
                 placeholder="Name"
                 required
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 outline-none"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -108,7 +123,7 @@ const Signup = () => {
                 type="email"
                 placeholder="Email"
                 required
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 outline-none"
                 value={email}
                 onChange={handleEmailChange}
               />
@@ -123,7 +138,7 @@ const Signup = () => {
                 type="text"
                 placeholder="Username"
                 required
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 outline-none"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -139,7 +154,7 @@ const Signup = () => {
                 type="password"
                 placeholder="Password"
                 required
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-black-500 focus:ring-1 focus:ring-black-500/20 transition-all duration-200 outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 outline-none"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -151,14 +166,14 @@ const Signup = () => {
                   id="terms"
                   name="terms"
                   type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-blue-500 focus:ring-blue-500 transition-all duration-200 cursor-pointer"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500 transition-all duration-200 cursor-pointer"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
                 />
               </div>
               <div className="ml-3 text-xs">
                 <label
-                  className="text-slate-500 cursor-pointer"
+                  className="text-gray-500 dark:text-gray-400 cursor-pointer"
                   htmlFor="terms"
                 >
                   I agree to the{" "}
@@ -216,7 +231,7 @@ const Signup = () => {
           </form>
 
           <div className="mt-8 text-center">
-            <p className="text-slate-600 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               Already have an account?
               <span
                 className="text-emerald-500 hover:text-emerald-600 font-semibold transition-colors duration-200 cursor-pointer ml-1"

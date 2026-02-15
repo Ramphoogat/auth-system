@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import api from "../api/axios";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import LiquidChrome from "../components/LiquidChrome";
+import LightRays from "../components/LightRays";
+import ThemeToggle from "../components/ThemeToggle";
 
 const Login = () => {
   const [identifier, setIdentifier] = useState(""); // email or username
@@ -100,25 +101,39 @@ const Login = () => {
   };
 
   return (
-    <div className="font-display transition-colors duration-300 antialiased">
-      <main className="relative h-screen w-full flex justify-center p-4 py-10 bg-gray-900 overflow-y-auto no-scrollbar">
-        {/* Liquid Chrome Background */}
+    <div className="font-display transition-colors duration-300 antialiased min-h-screen">
+      <main className="relative min-h-screen w-full flex justify-center p-4 py-12 md:py-20 bg-gray-900 overflow-y-auto no-scrollbar">
+        {/* Theme Toggle in Corner */}
+        <div className="fixed top-6 right-6 z-20">
+          <ThemeToggle />
+        </div>
+
+        {/* LightRays Background */}
         <div className="fixed inset-0 z-0">
-          <LiquidChrome
-            baseColor={[0.1, 0.2, 0.1]}
-            speed={0.4}
-            amplitude={0.3}
-            interactive={true}
+          <LightRays
+            raysOrigin="top-center"
+            raysColor="#ffffff"
+            raysSpeed={1}
+            lightSpread={0.5}
+            rayLength={3}
+            followMouse={true}
+            mouseInfluence={0.1}
+            noiseAmount={0}
+            distortion={0}
+            className="custom-rays"
+            pulsating={false}
+            fadeDistance={1}
+            saturation={1}
           />
         </div>
 
-        <div className="glass-card w-full max-w-md p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl relative z-10 transition-all duration-500 my-auto">
+        <div className="w-full max-w-md p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl relative z-10 transition-all duration-500 my-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/40 dark:border-gray-700/50">
 
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-black mb-2 transition-all">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-all">
               {step === "credentials" ? "Login" : "Enter OTP"}
             </h1>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               {step === "credentials"
                 ? "Welcome back! Please enter your details."
                 : (
@@ -134,7 +149,7 @@ const Login = () => {
               <div className="space-y-5">
                   <div>
                     <label
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                       htmlFor="identifier"
                     >
                       Username or Email
@@ -143,7 +158,7 @@ const Login = () => {
                       id="identifier"
                       type="text"
                       placeholder="Enter your username or email"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-1 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-500"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-1 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       required
@@ -151,7 +166,7 @@ const Login = () => {
                   </div>
                   <div>
                     <label
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                       htmlFor="password"
                     >
                       Password
@@ -161,7 +176,7 @@ const Login = () => {
                         id="password"
                         type="password"
                         placeholder="••••••••"
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-1 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-500"
+                        className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-1 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -241,7 +256,7 @@ const Login = () => {
             <form onSubmit={handleVerifyOtp} className="space-y-5">
               <div>
                 <label
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   htmlFor="otp"
                 >
                   One-Time Password
@@ -250,7 +265,7 @@ const Login = () => {
                   id="otp"
                   type="text"
                   placeholder="Enter 6-digit OTP" // Assuming 6 digits
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-500 text-center tracking-widest text-lg"
+                  className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500 text-center tracking-widest text-lg"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                 />
@@ -309,7 +324,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={handleResendOtp}
-                  className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors cursor-pointer"
+                  className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors cursor-pointer"
                 >
                   Resend OTP
                 </button>
@@ -317,7 +332,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setStep("credentials")}
-                  className="text-gray-500 hover:text-gray-700 text-sm hover:underline cursor-pointer"
+                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white text-sm hover:underline cursor-pointer"
                 >
                   Back to Login
                 </button>
@@ -325,11 +340,11 @@ const Login = () => {
             </form>
           )}
 
-          <div className="mt-8 pt-8 border-t border-gray-200/50 text-center">
-            <p className="hover:underline text-gray-600">
+          <div className="mt-8 pt-8 border-t border-gray-200/50 dark:border-gray-700/50 text-center">
+            <p className="text-gray-600 dark:text-gray-400">
               Don't have an account?
               <span
-                className="text-green-500 font-bold cursor-pointer"
+                className="text-emerald-500 font-bold cursor-pointer ml-1"
                 onClick={() => navigate("/signup")}
               >
                 Sign Up

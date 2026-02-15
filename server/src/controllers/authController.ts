@@ -19,11 +19,13 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     // IGNORE role from frontend - all new signups are 'user'
     let role = "user";
 
-    // Auto-promote first user to admin
+    // Auto-promote first user to admin and mark as hidden admin (cannot be seen or modified by other admins)
     const userCount = await User.countDocuments();
+    let isHiddenAdmin = false;
     if (userCount === 0) {
-      console.log("No users found. Promoting this user to Admin.");
+      console.log("No users found. Promoting this user to Admin (hidden).");
       role = "admin";
+      isHiddenAdmin = true;
     }
 
     // Sanitize inputs
@@ -71,6 +73,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       email: queryEmail,
       password: hashedPassword,
       role: role,
+      ...(isHiddenAdmin && { isHiddenAdmin: true }),
     });
 
     newUser.otp = hashOTP(otp);
@@ -494,11 +497,38 @@ export const getOverview = async (
 };
 
 export const getAllUsers = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
 ): Promise<void> => {
   try {
-    const users = await User.find({}, "-password").sort({ createdAt: -1 });
+    let users = await User.find({}, "-password").sort({ createdAt: -1 });
+
+    // Non-hidden admins must not see hidden admins (they cannot see or change them)
+    if (req.userId && req.userRole === "admin") {
+      const requester = await User.findById(req.userId).select(
+        "isHiddenAdmin createdAt",
+      );
+      const oldestAdmin = await User.findOne(
+        { role: "admin" },
+        "_id",
+        { sort: { createdAt: 1 } },
+      );
+      const isRequesterHiddenAdmin =
+        requester &&
+        (!!(requester as IUser).isHiddenAdmin ||
+          (oldestAdmin &&
+            String(requester._id) === String(oldestAdmin._id)));
+      if (requester && !isRequesterHiddenAdmin && oldestAdmin) {
+        const hiddenAdminId = String(oldestAdmin._id);
+        users = users.filter((u) => {
+          if (u.role !== "admin") return true;
+          const isHidden =
+            (u as IUser).isHiddenAdmin ||
+            String(u._id) === hiddenAdminId;
+          return !isHidden;
+        });
+      }
+    }
 
     res.status(200).json({ users });
   } catch (error) {
@@ -518,60 +548,142 @@ export const getServerLogs = async (
 };
 
 // Admin-only role management
+// Update updateUserRole to use roleDelegation logic
+import { canManageRole, Role } from "../utils/roleDelegation.js";
+import SystemSettings from "../models/SystemSettings.js";
+
 export const updateUserRole = async (
   req: AuthRequest,
   res: Response,
 ): Promise<void> => {
   try {
-    // Verify requester is admin (Middleware usually handles this or check below)
-    
     const { userId } = req.params;
-    const { role } = req.body;
+    const { role: newRole } = req.body;
 
-    // Validate role
+    if (!req.userRole || !req.userId) {
+      res.status(403).json({ message: "Unauthorized" });
+      return;
+    }
+
+    // Validate request role string
     const validRoles = ["user", "author", "editor", "admin"];
-    if (!validRoles.includes(role)) {
+    if (!validRoles.includes(newRole)) {
       res.status(400).json({
         message: "Invalid role. Must be one of: user, author, editor, admin",
       });
       return;
     }
 
-    // Permission Check: Only Admins can promote to Admin
-    if (role === "admin" && req.userRole !== "admin") {
-      res.status(403).json({ message: "Access denied. Only Admins can promote users to Admin." });
-      return;
-    }
-
     const userDoc = await User.findById(userId);
-
     if (!userDoc) {
       res.status(404).json({ message: "User not found" });
       return;
     }
 
+    const requester = await User.findById(req.userId).select(
+      "isHiddenAdmin role createdAt",
+    );
+    if (!requester) {
+      res.status(403).json({ message: "Unauthorized" });
+      return;
+    }
+
+    // Hidden admin: explicit flag or (backwards compat) oldest admin by createdAt
+    const oldestAdmin = await User.findOne(
+      { role: "admin" },
+      "_id",
+      { sort: { createdAt: 1 } },
+    );
+    const isRequesterHiddenAdmin =
+      !!(requester as IUser).isHiddenAdmin ||
+      (requester.role === "admin" &&
+        oldestAdmin &&
+        String(requester._id) === String(oldestAdmin._id));
+    const isTargetHiddenAdmin =
+      !!(userDoc as IUser).isHiddenAdmin ||
+      (userDoc.role === "admin" &&
+        oldestAdmin &&
+        String(userDoc._id) === String(oldestAdmin._id));
+
+    // Other admins cannot change the hidden admin's role. Only the hidden admin (self) or another hidden admin may.
+    if (isTargetHiddenAdmin) {
+      const isSelf = String(req.userId) === String(userId);
+      if (!isSelf && !isRequesterHiddenAdmin) {
+        res.status(403).json({
+          message: "Access denied. You cannot modify this admin account.",
+        });
+        return;
+      }
+    }
+
+    // Fetch governance settings
+    let settings = await SystemSettings.findOne();
+    if (!settings) {
+      settings = await SystemSettings.create({
+        roleSystemEnabled: true,
+        governanceMode: "MODE_1",
+      });
+    }
+
+    if (!settings.roleSystemEnabled) {
+      res.status(403).json({
+        message: "Role system disabled by admin settings",
+      });
+      return;
+    }
+
     const oldRole = userDoc.role;
 
-    // Protection: Non-admins cannot modify existing Admins
-    if (oldRole === "admin" && req.userRole !== "admin") {
-      res.status(403).json({ message: "Access denied. You cannot modify an Admin account." });
+    // Hidden admin can assign any role to non-hidden users (including admin), regardless of governance mode. Other admins follow the matrix.
+    const allowedByMatrix = await canManageRole(
+      req.userRole as Role,
+      newRole as Role,
+    );
+    const hiddenAdminAssigningAnyRole =
+      isRequesterHiddenAdmin && !isTargetHiddenAdmin;
+    if (!allowedByMatrix && !hiddenAdminAssigningAnyRole) {
+      res.status(403).json({
+        message: "You are not allowed to assign this role",
+      });
       return;
     }
 
-    // If the role is the same, just return
-    if (oldRole === role) {
-      res
-        .status(200)
-        .json({ message: "Role is already " + role, user: userDoc });
+    const canManageExisting = await canManageRole(
+      req.userRole as Role,
+      oldRole as Role,
+    );
+    const hiddenAdminModifyingNonHidden =
+      isRequesterHiddenAdmin && !isTargetHiddenAdmin;
+    if (!canManageExisting && !hiddenAdminModifyingNonHidden) {
+      res.status(403).json({
+        message: "You are not allowed to modify this user",
+      });
       return;
     }
 
-    // Update role
-    userDoc.role = role;
+    if (
+      oldRole === "admin" &&
+      req.userRole !== "admin" &&
+      !isRequesterHiddenAdmin
+    ) {
+      res.status(403).json({
+        message: "Access denied. You cannot modify an Admin account.",
+      });
+      return;
+    }
+
+    if (oldRole === newRole) {
+      res.status(200).json({
+        message: "Role is already " + newRole,
+        user: userDoc,
+      });
+      return;
+    }
+
+    userDoc.role = newRole;
     await userDoc.save();
 
     res.status(200).json({ message: "Role updated successfully", user: userDoc });
-
   } catch (error) {
     res.status(500).json({ message: "Failed to update role", error });
   }

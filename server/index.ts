@@ -3,16 +3,16 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./src/routes/authRoutes.js";
+import settingsRoutes from "./src/routes/settings.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-
 app.use(cors({
     origin: process.env.CLIENT_URL || "*", 
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true
 }));
 app.use(express.json());
@@ -21,22 +21,42 @@ app.use(express.json());
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/meta.json', (req, res) => res.status(204).end());
 
-// Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/settings", settingsRoutes);
 
 app.get("/", (req, res) => {
   res.send("MERN Auth Server is running");
 });
 
 // MongoDB Connection
+
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
-  if (!process.env.MONGO_URI) return;
+  
+  // 1. Try connecting to Atlas or configured URI
+  if (process.env.MONGO_URI) {
+    try {
+      await mongoose.connect(process.env.MONGO_URI);
+      console.log("Connected to MongoDB");
+      return;
+    } catch (err) {
+      console.error("MongoDB connection error:", err);
+      console.log("Switching to fallback local database...");
+    }
+  }
+
+  // 2. Fallback to Memory Server (Dev only)
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log("✅ Connected to MongoDB");
+    console.log("Starting MongoDB Memory Server...");
+    const { MongoMemoryServer } = await import("mongodb-memory-server");
+    const mongod = await MongoMemoryServer.create();
+    const uri = mongod.getUri();
+    
+    await mongoose.connect(uri);
+    console.log("Connected to Local In-Memory MongoDB");
+    console.log("WARNING: Data is ephemeral and will be lost on restart.");
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("Failed to start fallback database:", err);
   }
 };
 

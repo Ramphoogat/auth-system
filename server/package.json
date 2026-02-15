@@ -9,7 +9,6 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test:api": "tsx src/tests/testEndpoints.ts"
-
   },
   "keywords": [],
   "author": "",
@@ -21,6 +20,7 @@
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "mongodb-memory-server": "^11.0.1",
     "mongoose": "^9.1.6",
     "nodemailer": "^8.0.1",
     "resend": "^6.9.1"

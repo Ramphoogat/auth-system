@@ -9,6 +9,8 @@ export interface IUser extends Document {
   otpExpires?: Date;
   isVerified: boolean;
   role: "user" | "admin" | "editor" | "author";
+  /** When true, this admin is hidden: other admins cannot see or change their role. Cannot be set to false once true. */
+  isHiddenAdmin?: boolean;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
 }
@@ -36,6 +38,7 @@ const UserSchema: Schema = new Schema(
       enum: ["user", "admin", "editor", "author"],
       default: "user",
     },
+    isHiddenAdmin: { type: Boolean, default: false },
     otp: { type: String },
     otpExpires: { type: Date },
     isVerified: { type: Boolean, default: false },

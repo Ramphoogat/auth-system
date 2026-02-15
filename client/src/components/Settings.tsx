@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import Wallpapers from './Wallpapers';
+
 
 const Settings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'appearance' | 'wallpaper' | 'notifications' | 'sound' | 'about'>('appearance');
+  const [activeTab, setActiveTab] = useState<'appearance' | 'notifications' | 'sound' | 'about'>('appearance');
 
   const tabs: { id: typeof activeTab; label: string; icon: string }[] = [
     { id: 'appearance', label: 'Appearance', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
-    { id: 'wallpaper', label: 'Wallpaper', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+
     { id: 'notifications', label: 'Notifications', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
     { id: 'sound', label: 'Sound', icon: 'M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z' },
     { id: 'about', label: 'About', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -14,8 +14,7 @@ const Settings: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'wallpaper':
-        return <Wallpapers />;
+
       case 'appearance':
         return (
           <div className="p-8">

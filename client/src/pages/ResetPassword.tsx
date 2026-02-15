@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import api from '../api/axios';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
+import LightRays from '../components/LightRays';
+import ThemeToggle from '../components/ThemeToggle';
 
 const ResetPassword = () => {
     const [password, setPassword] = useState('');
@@ -34,41 +36,60 @@ const ResetPassword = () => {
     };
 
     return (
-        <div className="font-display transition-colors duration-300 antialiased overflow-hidden">
-            <main className="relative min-h-screen w-full flex items-center justify-center animated-bg p-4">
-                {/* Animated Shapes */}
-                <div className="shape bg-blue-400 w-96 h-96 -top-20 -left-20 animate-pulse"></div>
-                <div className="shape bg-purple-400 w-80 h-80 -bottom-20 -right-20 animate-bounce" style={{ animationDuration: '10s' }}></div>
-                <div className="shape bg-teal-300 w-72 h-72 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30"></div>
+        <div className="font-display transition-colors duration-300 antialiased min-h-screen">
+            <main className="relative min-h-screen w-full flex items-center justify-center bg-gray-900 p-4 overflow-y-auto no-scrollbar py-12 md:py-0">
+                {/* Theme Toggle in Corner */}
+                <div className="fixed top-6 right-6 z-20">
+                    <ThemeToggle />
+                </div>
 
-                <div className="glass-card w-full max-w-md p-10 rounded-3xl shadow-2xl relative z-10">
+                {/* LightRays Background */}
+                <div className="absolute inset-0 z-0">
+                    <LightRays 
+                        raysOrigin="top-center"
+                        raysColor="#ffffff"
+                        raysSpeed={1}
+                        lightSpread={0.5}
+                        rayLength={3}
+                        followMouse={true}
+                        mouseInfluence={0.1}
+                        noiseAmount={0}
+                        distortion={0}
+                        className="custom-rays"
+                        pulsating={false}
+                        fadeDistance={1}
+                        saturation={1}
+                    />
+                </div>
+
+                <div className="w-full max-w-md p-10 rounded-[32px] shadow-2xl relative z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 transition-all duration-500">
                     <div className="text-center mb-10">
-                        <h1 className="text-3xl font-bold text-black mb-2">
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                             Reset Password
                         </h1>
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 dark:text-gray-400">
                             Enter your new password below.
                         </p>
                     </div>
 
                     {message ? (
                         <div className="text-center">
-                            <div className="bg-green-100 text-green-700 p-4 rounded-xl mb-6">
+                            <div className="bg-emerald-100/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-4 rounded-xl mb-6 border border-emerald-200 dark:border-emerald-500/20">
                                 {message}
                             </div>
-                            <p className="text-gray-600">Redirecting to login...</p>
+                            <p className="text-gray-600 dark:text-gray-400">Redirecting to login...</p>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="password">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" htmlFor="password">
                                     New Password
                                 </label>
                                 <input
                                     id="password"
                                     type="password"
                                     placeholder="••••••••"
-                                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-1 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-500"
+                                    className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-1 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -76,14 +97,14 @@ const ResetPassword = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="confirmPassword">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" htmlFor="confirmPassword">
                                     Confirm New Password
                                 </label>
                                 <input
                                     id="confirmPassword"
                                     type="password"
                                     placeholder="••••••••"
-                                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-1 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-500"
+                                    className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-1 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
@@ -93,7 +114,7 @@ const ResetPassword = () => {
 
                             <button 
                                 type="submit" 
-                                className="w-full py-4 bg-primary hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/30 flex items-center justify-center space-x-2 cursor-pointer"
+                                className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/30 flex items-center justify-center space-x-2 cursor-pointer"
                             >
                                 <span>Reset Password</span>
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import api from '../api/axios';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
-import LiquidChrome from '../components/LiquidChrome';
+import LightRays from '../components/LightRays';
+import ThemeToggle from '../components/ThemeToggle';
 
 const VerifyOtp: React.FC = () => {
   const [otp, setOtp] = useState('');
@@ -17,19 +18,19 @@ const VerifyOtp: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const payload = { 
-        email, 
+      const payload = {
+        email,
         otp,
         role // Send role so backend knows which profile to verify
       };
       const { data } = await api.post('/auth/verify-otp', payload);
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.result.role);
-      
+
       // Redirect based on the verified role
       const userRole = data.result.role;
       console.log('Verification successful. User role:', userRole);
-      
+
       if (userRole === 'admin') {
         console.log('Navigating to admin dashboard');
         navigate('/admin/dashboard');
@@ -67,43 +68,57 @@ const VerifyOtp: React.FC = () => {
   };
 
   return (
-    <div className="font-display antialiased m-0 p-0 flex items-center justify-center min-h-screen bg-gray-900 relative overflow-hidden">
-        {/* Liquid Chrome Background */}
+    <div className="font-display antialiased m-0 p-0 flex min-h-screen bg-gray-900 relative overflow-y-auto no-scrollbar py-12 md:py-0 items-center justify-center">
+        {/* Theme Toggle in Corner */}
+        <div className="fixed top-6 right-6 z-20">
+            <ThemeToggle />
+        </div>
+
+        {/* LightRays Background */}
         <div className="absolute inset-0 z-0">
-            <LiquidChrome 
-                baseColor={[0.1, 0.2, 0.1]}
-                speed={0.4}
-                amplitude={0.3}
-                interactive={true}
+            <LightRays
+                raysOrigin="top-center"
+                raysColor="#ffffff"
+                raysSpeed={1}
+                lightSpread={0.5}
+                rayLength={3}
+                followMouse={true}
+                mouseInfluence={0.1}
+                noiseAmount={0}
+                distortion={0}
+                className="custom-rays"
+                pulsating={false}
+                fadeDistance={1}
+                saturation={1}
             />
         </div>
 
         <div className="w-full max-w-md px-4 z-10">
-            <div className="glass-card shadow-2xl rounded-3xl p-10 transition-all duration-300 relative">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 shadow-2xl rounded-[32px] p-10 transition-all duration-500 relative">
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold text-black mb-2">Verify OTP</h1>
-                    <p className="text-gray-600">Enter the code sent to your <span className="font-semibold">email</span></p>
-                    <p className="text-xs text-gray-400 mt-1">{email}</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Verify OTP</h1>
+                    <p className="text-gray-600 dark:text-gray-400">Enter the code sent to your <span className="font-semibold text-gray-900 dark:text-white">email</span></p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{email}</p>
                 </div>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="otp">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" htmlFor="otp">
                             One-Time Password
                         </label>
                         <input
                             id="otp"
                             type="text"
                             placeholder="••••••"
-                            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 placeholder-gray-400 text-center tracking-widest text-2xl font-bold"
+                            className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 text-center tracking-widest text-2xl font-bold"
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
                             required
                         />
                     </div>
 
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         className="w-full py-4 bg-primary hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/30 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
                         disabled={isLoading}
                     >
@@ -122,20 +137,20 @@ const VerifyOtp: React.FC = () => {
                             </>
                         )}
                     </button>
-                    
+
                     <div className="flex flex-col gap-3 mt-4">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onClick={handleResendOtp}
-                            className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors cursor-pointer font-medium"
+                            className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors cursor-pointer font-medium"
                         >
                             Resend OTP
                         </button>
-                        
-                        <button 
+
+                        <button
                             type="button"
                             onClick={() => navigate('/login')}
-                            className="text-gray-500 hover:text-gray-700 text-sm hover:underline cursor-pointer text-center"
+                            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white text-sm hover:underline cursor-pointer text-center"
                         >
                             Back to Login
                         </button>
