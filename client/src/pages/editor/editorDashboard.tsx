@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   FiUsers,
   FiActivity,
   FiLayout,
   FiType,
   FiShield,
+  FiChevronDown,
 } from "react-icons/fi";
 import api from "../../api/axios";
 import { AxiosError } from "axios";
@@ -21,9 +22,11 @@ import { useToast } from "../../components/ToastProvider";
 
 const EditorDashboard = () => {
   const navigate = useNavigate();
+  const { section } = useParams<{ section?: string }>();
   const [editorName, setEditorName] = useState("Editor");
   const [editorEmail, setEditorEmail] = useState("");
   const [editorUsername, setEditorUsername] = useState("");
+  const [editorRole, setEditorRole] = useState("editor");
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<IUser[]>([]);
   const [statsData, setStatsData] = useState<IAdminStats | null>(null);
@@ -33,6 +36,7 @@ const EditorDashboard = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [governanceMode, setGovernanceMode] = useState<string>("MODE_1");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [isRoleDropDownOpen, setIsRoleDropDownOpen] = useState(false);
   const { showSuccess, showError } = useToast();
 
   useEffect(() => {
@@ -45,6 +49,7 @@ const EditorDashboard = () => {
         setEditorName(user.name || user.username);
         setEditorUsername(user.username);
         setEditorEmail(user.email);
+        setEditorRole(user.role);
 
         if (!["admin", "author", "editor"].includes(user.role)) {
           navigate("/dashboard");
@@ -58,7 +63,7 @@ const EditorDashboard = () => {
           securityAlerts: overviewRes.data.securityAlerts,
           systemUptime: overviewRes.data.systemUptime,
         });
-        
+
         const usersRes = await api.get("/auth/admin/users");
         setUsers(usersRes.data.users || []);
 
@@ -96,12 +101,12 @@ const EditorDashboard = () => {
 
   useEffect(() => {
     if (refreshTrigger > 0) {
-        api.get("/auth/profile").then(res => {
-            const user = res.data.user;
-            setEditorName(user.name || user.username);
-            setEditorUsername(user.username);
-            setEditorEmail(user.email);
-        }).catch(() => {});
+      api.get("/auth/profile").then(res => {
+        const user = res.data.user;
+        setEditorName(user.name || user.username);
+        setEditorUsername(user.username);
+        setEditorEmail(user.email);
+      }).catch(() => { });
     }
   }, [refreshTrigger]);
 
@@ -115,6 +120,35 @@ const EditorDashboard = () => {
     { icon: <FiLayout />, label: "Overview", id: "Overview" },
     { icon: <FiShield />, label: "Management", id: "Management" },
   ];
+
+  // Map ids <-> slugs
+  const idToSlug: Record<string, string> = {
+    Overview: "overview",
+    Management: "management",
+  };
+  const slugToId: Record<string, string> = Object.fromEntries(
+    Object.entries(idToSlug).map(([k, v]) => [v.toLowerCase(), k]),
+  );
+
+  // On mount / when URL changes, sync active tab
+  useEffect(() => {
+    if (section) {
+      const mapped = slugToId[section.toLowerCase()] || "Overview";
+      setActiveTab(mapped as "Overview" | "Management");
+    } else {
+      // ensure URL shows default slug
+      const defaultSlug = idToSlug["Overview"];
+      navigate(`/editor/dashboard/${defaultSlug}`, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section]);
+
+  // Pass a handler that navigates + updates state
+  const handleTabChange = (id: string) => {
+    const slug = idToSlug[id] || idToSlug["Overview"];
+    navigate(`/editor/dashboard/${slug}`);
+    setActiveTab(id as "Overview" | "Management");
+  };
 
   const stats = [
     { title: "Total Readers", value: statsData?.totalUsers || "0", change: "+8%", icon: <FiUsers className="w-6 h-6" /> },
@@ -134,12 +168,12 @@ const EditorDashboard = () => {
       title="EditorPanel"
       sidebarItems={sidebarItems}
       activeTab={activeTab}
-      onTabChange={(id) => setActiveTab(id as "Overview" | "Management")}
+      onTabChange={handleTabChange}
       userProfile={{
         name: editorName,
         email: editorEmail,
         username: editorUsername,
-        role: "Content Editor",
+        role: editorRole === "admin" ? "Administrator" : (editorRole === "author" ? "Content Author" : "Content Editor"),
       }}
       notifications={notifications}
       onLogout={handleLogout}
@@ -154,30 +188,30 @@ const EditorDashboard = () => {
               <h1 className="text-2xl md:text-3xl font-bold dark:text-white tracking-tight">Editorial Hub</h1>
               <p className="text-xs md:text-sm text-gray-500">Review and moderate user interactions and content flow.</p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
               {stats.map((stat, i) => (
                 <div key={i} className="bg-white dark:bg-gray-800 p-8 md:p-10 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:translate-y-[-4px] transition-all">
-                   <div className="flex justify-between items-start mb-4 md:mb-6">
-                      <div className="p-3 md:p-4 bg-cyan-50 dark:bg-cyan-500/10 rounded-2xl text-cyan-600">
-                        {stat.icon}
-                      </div>
-                      <span className="text-[10px] font-bold px-3 py-1 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 rounded-lg">
-                        {stat.change}
-                      </span>
-                   </div>
-                   <h3 className="text-gray-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1">{stat.title}</h3>
-                   <p className="text-2xl md:text-3xl font-bold dark:text-white">{stat.value}</p>
+                  <div className="flex justify-between items-start mb-4 md:mb-6">
+                    <div className="p-3 md:p-4 bg-cyan-50 dark:bg-cyan-500/10 rounded-2xl text-cyan-600">
+                      {stat.icon}
+                    </div>
+                    <span className="text-[10px] font-bold px-3 py-1 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 rounded-lg">
+                      {stat.change}
+                    </span>
+                  </div>
+                  <h3 className="text-gray-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1">{stat.title}</h3>
+                  <p className="text-2xl md:text-3xl font-bold dark:text-white">{stat.value}</p>
                 </div>
               ))}
             </div>
 
             <div className="bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-xl rounded-[32px] md:rounded-[48px] border border-white/50 dark:border-gray-700 p-8 md:p-16 text-center shadow-inner mt-8">
-               <div className="w-16 h-16 md:w-20 md:h-20 bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-xl text-cyan-500">
-                  <FiType className="w-8 h-8 md:w-10 md:h-10" />
-               </div>
-               <h3 className="text-lg md:text-xl font-bold mb-4">Editorial Queue</h3>
-               <p className="text-sm text-gray-400 max-w-md mx-auto">The content moderation engine is being integrated. You'll soon be able to review pending posts and user comments here.</p>
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-xl text-cyan-500">
+                <FiType className="w-8 h-8 md:w-10 md:h-10" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold mb-4">Editorial Queue</h3>
+              <p className="text-sm text-gray-400 max-w-md mx-auto">The content moderation engine is being integrated. You'll soon be able to review pending posts and user comments here.</p>
             </div>
           </div>
         ) : (
@@ -186,55 +220,81 @@ const EditorDashboard = () => {
               <div>
                 <h1 className="text-2xl font-bold dark:text-white">Editor Governance</h1>
                 <p className="text-sm text-gray-500">
-                   Manage permissions for users under your hierarchy.
+                  Manage permissions for users under your hierarchy.
                 </p>
               </div>
-              <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl overflow-x-auto no-scrollbar max-w-full">
-                  {['all', 'editor', 'user'].map(r => (
-                    <button 
-                      key={r}
-                      onClick={() => setRoleFilter(r)}
-                      className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all whitespace-nowrap ${roleFilter === r ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-500' : 'text-gray-500 hover:text-blue-500'}`}
-                    >
-                      {r.toUpperCase()}
-                    </button>
-                  ))}
-               </div>
+              <div className="flex items-center gap-2 relative">
+                {/* ALL BUTTON */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsRoleDropDownOpen(!isRoleDropDownOpen)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${roleFilter === "all"
+                      ? "bg-white dark:bg-gray-700 shadow-sm text-blue-500"
+                      : "text-gray-500 hover:text-blue-500"
+                      }`}
+                  >
+                    {roleFilter.toUpperCase()}
+                    <FiChevronDown size={12}
+                      className={`transition-transform duration-200 ${isRoleDropDownOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {isRoleDropDownOpen && (
+                    <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 z-50">
+                      {["all", "editor", "user"].map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => {
+                            setRoleFilter(r);
+                            setIsRoleDropDownOpen(false);
+                          }}
+                          className={`block w-full text-left px-3 py-2 text-[10px] font-bold hover:bg-gray-100 dark:hover:bg-gray-600 ${roleFilter === r
+                            ? "text-blue-500"
+                            : "text-gray-600 dark:text-gray-300"
+                            }`}
+                        >
+                          {r.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
-               <div className="overflow-x-auto no-scrollbar">
-                  <table className="w-full text-left">
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                      {users
-                        .filter(u => {
-                           // Allow Editor and User roles. Explicitly exclude Admin/Author.
-                           const allowedRoles = ["editor", "user"];
-                           if (!allowedRoles.includes(u.role)) return false;
-                           
-                           // Apply the role filter
-                           if (roleFilter !== 'all' && u.role !== roleFilter) return false;
-                           
-                           return true;
-                        })
-                        .map(u => (
-                          <UserManagementRow 
-                            key={u._id} 
-                            user={u} 
-                            allowedRoles={governanceMode === "MODE_2" ? ["user", "editor"] : ["user"]}
-                            onRoleChange={async (id, role) => {
-                              try {
-                                await api.put(`/auth/admin/users/${id}/role`, { role });
-                                setUsers(prev => prev.map(user => user._id === id ? { ...user, role } : user));
-                                showSuccess("Role updated successfully");
-                              } catch {
-                                showError("Failed to update role");
-                              }
-                            }} 
-                          />
-                        ))}
-                    </tbody>
-                  </table>
-               </div>
+              <div className="overflow-x-auto no-scrollbar">
+                <table className="w-full text-left">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {users
+                      .filter(u => {
+                        // Allow Editor and User roles. Explicitly exclude Admin/Author.
+                        const allowedRoles = ["editor", "user"];
+                        if (!allowedRoles.includes(u.role)) return false;
+
+                        // Apply the role filter
+                        if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+
+                        return true;
+                      })
+                      .map(u => (
+                        <UserManagementRow
+                          key={u._id}
+                          user={u}
+                          allowedRoles={governanceMode === "MODE_2" ? ["user", "editor"] : ["user"]}
+                          onRoleChange={async (id, role) => {
+                            try {
+                              await api.put(`/auth/admin/users/${id}/role`, { role });
+                              setUsers(prev => prev.map(user => user._id === id ? { ...user, role } : user));
+                              showSuccess("Role updated successfully");
+                            } catch {
+                              showError("Failed to update role");
+                            }
+                          }}
+                        />
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

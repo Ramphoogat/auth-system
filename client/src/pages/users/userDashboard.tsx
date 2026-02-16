@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { FiUsers, FiActivity, FiLayout, FiCheckCircle } from "react-icons/fi";
 import api from "../../api/axios";
 import { AxiosError } from "axios";
@@ -10,9 +10,11 @@ import { UserManagementRow } from "../admin/AdminComponents";
 
 const UserDashboard = () => {
   const navigate = useNavigate();
+  const { section } = useParams<{ section?: string }>();
   const [userName, setUserName] = useState("User");
   const [userEmail, setUserEmail] = useState("");
   const [userUsername, setUserUsername] = useState("");
+  const [userRole, setUserRole] = useState("user");
   const [isLoading, setIsLoading] = useState(true);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [activeTab, setActiveTab] = useState<"Overview" | "UserManagement">(
@@ -34,6 +36,7 @@ const UserDashboard = () => {
         setUserName(user.name || user.username);
         setUserUsername(user.username);
         setUserEmail(user.email);
+        setUserRole(user.role);
 
         try {
           const overviewRes = await api.get("/auth/overview");
@@ -90,6 +93,35 @@ const UserDashboard = () => {
     { icon: <FiUsers />, label: "Management", id: "UserManagement" },
   ];
 
+  // Map ids <-> slugs
+  const idToSlug: Record<string, string> = {
+    Overview: "overview",
+    UserManagement: "management",
+  };
+  const slugToId: Record<string, string> = Object.fromEntries(
+    Object.entries(idToSlug).map(([k, v]) => [v.toLowerCase(), k]),
+  );
+
+  // On mount / when URL changes, sync active tab
+  useEffect(() => {
+    if (section) {
+      const mapped = slugToId[section.toLowerCase()] || "Overview";
+      setActiveTab(mapped as "Overview" | "UserManagement");
+    } else {
+      // ensure URL shows default slug
+      const defaultSlug = idToSlug["Overview"];
+      navigate(`/dashboard/${defaultSlug}`, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section]);
+
+  // Pass a handler that navigates + updates state
+  const handleTabChange = (id: string) => {
+    const slug = idToSlug[id] || idToSlug["Overview"];
+    navigate(`/dashboard/${slug}`);
+    setActiveTab(id as "Overview" | "UserManagement");
+  };
+
   const stats = [
     {
       title: "Personal Impact",
@@ -118,12 +150,12 @@ const UserDashboard = () => {
       title="UserPanel"
       sidebarItems={sidebarItems}
       activeTab={activeTab}
-      onTabChange={(id) => setActiveTab(id as "Overview" | "UserManagement")}
+      onTabChange={handleTabChange}
       userProfile={{
         name: userName,
         email: userEmail,
         username: userUsername,
-        role: "Member",
+        role: userRole === "admin" ? "Administrator" : "Member",
       }}
       notifications={notifications}
       onLogout={handleLogout}
@@ -205,7 +237,7 @@ const UserDashboard = () => {
                           key={u._id}
                           user={u}
                           allowedRoles={[]} // Read-only for users
-                          onRoleChange={async () => {}} // No-op
+                          onRoleChange={async () => { }} // No-op
                         />
                       ))}
                   </tbody>

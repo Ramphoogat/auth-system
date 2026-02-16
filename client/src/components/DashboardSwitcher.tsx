@@ -26,16 +26,15 @@ const DashboardSwitcher: React.FC = () => {
 
   if (!userRole) return null;
 
-  // STRICT RULE: Only 'admin' can switch dashboards
-  if (userRole !== 'admin') return null;
-
   const navItems = getNavigationItems(userRole);
-  
+
   // Don't show switcher if user only has access to one dashboard (safety check)
   if (navItems.length <= 1) return null;
 
-  // Find current active dashboard
-  const currentDashboard = navItems.find(item => location.pathname === item.path) || navItems[navItems.length - 1];
+  // Find current active dashboard (partial match to handle sub-routes)
+  const currentDashboard = navItems.find(item =>
+    location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)
+  ) || navItems[0];
 
   const getIcon = (role: string) => {
     switch (role) {
@@ -87,7 +86,7 @@ const DashboardSwitcher: React.FC = () => {
 
             <div className="p-2 space-y-1">
               {navItems.map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
                 return (
                   <button
                     key={item.path}
@@ -95,11 +94,10 @@ const DashboardSwitcher: React.FC = () => {
                       navigate(item.path);
                       setIsOpen(false);
                     }}
-                    className={`w-full flex items-start space-x-3 px-3 py-3 rounded-xl transition-all group ${
-                      isActive
-                        ? 'bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-transparent'
-                    }`}
+                    className={`w-full flex items-start space-x-3 px-3 py-3 rounded-xl transition-all group ${isActive
+                      ? 'bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-transparent'
+                      }`}
                   >
                     <div className={`mt-0.5 p-2 rounded-lg ${isActive ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200'}`}>
                       {getIcon(item.role)}

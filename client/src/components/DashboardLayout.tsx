@@ -10,6 +10,8 @@ import {
 } from "react-icons/fi";
 import ThemeToggle from "./ThemeToggle";
 import DashboardSwitcher from "./DashboardSwitcher";
+import NotificationCenter from "./NotificationCenter";
+import { useNotifications } from "../context/NotificationContext";
 
 export interface INotification {
   id: string;
@@ -36,11 +38,10 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
 }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center h-10 px-2 py-2 rounded-2xl transition-all duration-300 group ${
-      active
-        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-        : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-emerald-500"
-    }`}
+    className={`w-full flex items-center h-10 px-2 py-2 rounded-2xl transition-all duration-300 group ${active
+      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
+      : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-emerald-500"
+      }`}
     title={!isSidebarOpen ? label : ""}
   >
     <div className="w-5 h-5 flex items-center justify-center shrink-0">
@@ -52,11 +53,10 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
     </div>
     {isSidebarOpen && (
       <span
-        className={`ml-4 font-semibold text-sm tracking-wide truncate overflow-hidden transition-all duration-200 ${
-          isSidebarOpen
-            ? "max-w-[160px] opacity-100 translate-x-0"
-            : "max-w-0 opacity-0 -translate-x-1 pointer-events-none"
-        }`}
+        className={`ml-4 font-semibold text-sm tracking-wide truncate overflow-hidden transition-all duration-200 ${isSidebarOpen
+          ? "max-w-[160px] opacity-100 translate-x-0"
+          : "max-w-0 opacity-0 -translate-x-1 pointer-events-none"
+          }`}
       >
         {label}
       </span>
@@ -93,7 +93,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   activeTab,
   onTabChange,
   userProfile,
-  notifications,
   onLogout,
   onEditProfile,
   children,
@@ -105,6 +104,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const { notifications: contextNotifications } = useNotifications();
 
   const accentClass =
     {
@@ -113,13 +113,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       purple: "from-purple-500 to-pink-500",
     }[accentColor as "emerald" | "blue" | "purple"] ||
     "from-emerald-500 to-cyan-500";
-
-  const textAccent =
-    {
-      emerald: "text-emerald-500",
-      blue: "text-blue-500",
-      purple: "text-purple-500",
-    }[accentColor as "emerald" | "blue" | "purple"] || "text-emerald-500";
 
   const accentShadow =
     {
@@ -143,13 +136,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   }, []);
 
   return (
-    <div className="h-screen font-sans flex overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
+    <div
+      className="h-screen font-sans flex overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300"
+      onClick={() => setShowNotifications(false)}
+    >
       {/* Sidebar - Desktop */}
       <aside
-        className={`hidden lg:flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 transition-all duration-500 ease-in-out z-40 relative ${
-          isSidebarOpen ? "w-60" : "w-24"
-        }`}
+        className={`hidden lg:flex flex-col bg-white dark:bg-gray-800 transition-all duration-500 ease-in-out z-40 relative ${isSidebarOpen ? "w-60" : "w-24"
+          }`}
       >
+        {/* Custom Border Line */}
+        <div className="absolute top-0 right-0 h-full w-px bg-gray-200 dark:bg-gray-700 z-10"></div>
+
+        {/* Curved Cut / Mask for Button - Hides the straight line behind button */}
+        <div className="absolute -right-[1px] top-8 w-6 h-9 bg-white dark:bg-gray-800 z-20"></div>
         {/* Floating Toggle Button */}
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -158,6 +158,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <FiChevronLeft
             className={`w-5 h-5 transition-transform duration-500 ${!isSidebarOpen && "rotate-180"}`}
           />
+
         </button>
 
         <div className={`h-20 lg:h-24 px-6 flex ${isSidebarOpen ? "items-center justify-start" : "items-center justify-center"} border-b border-gray-200 dark:border-gray-800 transition-all duration-300`}>
@@ -331,57 +332,29 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <div className="scale-90 sm:scale-100">
               <ThemeToggle />
             </div>
-              {/* Notification Bell Starts here */}
+            {/* Notification Bell Starts here */}
             <div className="relative">
               <button
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowNotifications(!showNotifications);
+                }}
                 className={`p-2 rounded-xl transition-all ${showNotifications ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500" : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"}`}
               >
                 <div className="relative">
                   <FiBell className="w-6 h-6" />
-                  {notifications.length > 0 && (
+                  {contextNotifications.length > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800">
-                      {notifications.length}
+                      {contextNotifications.length}
                     </span>
                   )}
                 </div>
               </button>
               {/* Notification Bell Ends here */}
               {showNotifications && (
-                <div className="absolute right-0 mt-4 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-2xl z-50 overflow-hidden animate-in zoom-in-95 duration-200 origin-top-right">
-                  <div className="p-5 border-b-[5px] border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                    <h3 className="font-bold">Notifications</h3>
-                    <span className="text-[10px] px-2 py-1 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 rounded-lg font-bold uppercase tracking-wider">
-                      {notifications.length} New
-                    </span>
-                  </div>
-                  <div className="max-h-[400px] overflow-y-auto no-scrollbar">
-                    {notifications.length > 0 ? (
-                      notifications.map((n, i) => (
-                        <div
-                          key={i}
-                          className="p-4 border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                        >
-                          <p className={`text-xs font-bold ${textAccent} mb-1`}>
-                            {n.title}
-                          </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">
-                            {n.message}
-                          </p>
-                          <p className="text-[9px] text-gray-400 mt-2">
-                            {n.time}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-10 text-center text-gray-400">
-                        <FiBell className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                        <p className="text-sm">Quiet for now...</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <NotificationCenter onClose={() => setShowNotifications(false)} />
               )}
+
             </div>
           </div>
         </header>

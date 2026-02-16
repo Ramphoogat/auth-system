@@ -5,7 +5,7 @@ import {
 } from "../context/NotificationContext";
 
 const NotificationToast: React.FC = () => {
-  const { notifications } = useNotifications();
+  const { notifications, removeNotification } = useNotifications();
   const [activeToast, setActiveToast] = useState<Notification | null>(null);
 
   useEffect(() => {
@@ -36,7 +36,11 @@ const NotificationToast: React.FC = () => {
             </span>
           </div>
           <button
-            onClick={() => setActiveToast(null)}
+            onClick={() => {
+              setActiveToast(null);
+              removeNotification(activeToast.id);
+            setActiveToast(null);
+            }}
             className="text-white/40 hover:text-white transition-colors"
           >
             <svg

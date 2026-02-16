@@ -57,11 +57,10 @@ export const SidebarItem = ({
 }) => (
   <div
     onClick={onClick}
-    className={`flex items-center ${isOpen ? "px-4" : "justify-center"} py-3 rounded-xl cursor-pointer transition-all duration-200 group ${
-      active
-        ? "bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-gray-200 dark:border-gray-700"
-        : "hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-    }`}
+    className={`flex items-center ${isOpen ? "px-4" : "justify-center"} py-3 rounded-xl cursor-pointer transition-all duration-200 group ${active
+      ? "bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-gray-200 dark:border-gray-700"
+      : "hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+      }`}
   >
     <div className={`${isOpen ? "mr-3" : ""} text-lg`}>{icon}</div>
     {isOpen && <span className="font-medium text-sm font-semibold">{label}</span>}
@@ -71,7 +70,7 @@ export const SidebarItem = ({
   </div>
 );
 
-import { FiChevronDown, FiChevronUp, FiCopy, FiCheck, FiClock, FiLogIn, FiLogOut } from "react-icons/fi";
+import { FiChevronDown, FiChevronUp, FiCopy, FiCheck, FiClock, FiLogIn, FiLogOut, FiShield } from "react-icons/fi";
 
 export const UserManagementRow = ({
   user,
@@ -136,13 +135,13 @@ export const UserManagementRow = ({
 
   return (
     <>
-      <tr 
+      <tr
         className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group border-b border-gray-100 dark:border-gray-700 last:border-0 cursor-pointer ${isExpanded ? "bg-gray-50 dark:bg-gray-800/50" : ""}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <td className="px-4 md:px-6 py-4">
           <div className="flex items-center">
-            <button 
+            <button
               className="mr-3 text-gray-400 hover:text-emerald-500 transition-colors"
               onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
             >
@@ -155,12 +154,12 @@ export const UserManagementRow = ({
             />
             <div className="flex flex-col">
               <span className="font-bold text-gray-800 dark:text-white text-sm md:text-base">
-                  {user.name || user.username}
+                {user.name || user.username}
               </span>
               <div className="flex items-center space-x-2 md:hidden">
                 <span className="text-[10px] text-gray-400 truncate max-w-[100px]" title={user.email}>{user.email}</span>
 
-                 <button
+                <button
                   onClick={copyEmail}
                   className="text-gray-400 hover:text-emerald-500 transition-colors"
                   title="Copy Email"
@@ -173,7 +172,16 @@ export const UserManagementRow = ({
         </td>
         <td className="hidden md:table-cell px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">
           <div className="flex items-center space-x-2">
-            <span className="truncate max-w-[150px]" title={user.email}>{user.email}</span>
+            <div className="relative group">
+              <span className="truncate max-w-[150px] cursor-pointer block text-gray-900 dark:text-gray-100 font-medium hover:text-emerald-500 transition-colors">
+                {user.email}
+              </span>
+              <div className="absolute left-0 bottom-full top-auto mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-[999] whitespace-nowrap transform translate-y-2 group-hover:translate-y-0">
+                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md text-gray-800 dark:text-gray-200 text-xs px-3 py-1.5 rounded-full shadow-xl border border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                  <span>{user.email}</span>
+                </div>
+              </div>
+            </div>
 
             <button
               onClick={copyEmail}
@@ -204,52 +212,58 @@ export const UserManagementRow = ({
           </div>
         </td>
         <td className="px-4 md:px-6 py-4" onClick={(e) => e.stopPropagation()}>
-          <select
-            value={user.role}
-            onChange={handleRoleChange}
-            disabled={isChanging}
-            className="rounded-lg px-2 py-1 md:px-3 md:py-1.5 bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-emerald-500 text-gray-700 dark:text-gray-300 text-[10px] md:text-sm outline-none transition-all cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            {availableRoles.map((role) => (
-              <option key={role} value={role}>
-                {role.charAt(0).toUpperCase() + role.slice(1)}
-              </option>
-            ))}
-          </select>
+          {allowedRoles.length > 0 ? (
+            <select
+              value={user.role}
+              onChange={handleRoleChange}
+              disabled={isChanging}
+              className="rounded-lg px-2 py-1 md:px-3 md:py-1.5 bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-emerald-500 text-gray-700 dark:text-gray-300 text-[10px] md:text-sm outline-none transition-all cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              {availableRoles.map((role) => (
+                <option key={role} value={role}>
+                  {role.charAt(0).toUpperCase() + role.slice(1)}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-gray-400 dark:text-gray-600 text-xs flex items-center justify-end gap-1 opacity-50 cursor-not-allowed">
+              <FiShield className="w-3 h-3" /> No Access
+            </span>
+          )}
         </td>
       </tr>
       {isExpanded && (
         <tr className="bg-gray-50/50 dark:bg-gray-800/30 animate-in fade-in slide-in-from-top-2 duration-200">
           <td colSpan={5} className="px-4 md:px-6 py-4">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs md:text-sm p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-inner">
-                <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
-                   <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-lg">
-                      <FiClock className="w-4 h-4" />
-                   </div>
-                   <div>
-                      <p className="font-bold text-gray-900 dark:text-gray-200">Joined</p>
-                      <p>{formatDate(user.createdAt)}</p>
-                   </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs md:text-sm p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-inner">
+              <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
+                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-lg">
+                  <FiClock className="w-4 h-4" />
                 </div>
-                <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
-                   <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-lg">
-                      <FiLogIn className="w-4 h-4" />
-                   </div>
-                   <div>
-                      <p className="font-bold text-gray-900 dark:text-gray-200">Last Login</p>
-                      <p>{formatDate(user.lastLogin)}</p>
-                   </div>
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-gray-200">Joined</p>
+                  <p>{formatDate(user.createdAt)}</p>
                 </div>
-                <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
-                   <div className="p-2 bg-orange-50 dark:bg-orange-900/20 text-orange-500 rounded-lg">
-                      <FiLogOut className="w-4 h-4" />
-                   </div>
-                   <div>
-                      <p className="font-bold text-gray-900 dark:text-gray-200">Last Signout</p>
-                      <p>{formatDate(user.lastLogout)}</p>
-                   </div>
+              </div>
+              <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-lg">
+                  <FiLogIn className="w-4 h-4" />
                 </div>
-             </div>
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-gray-200">Last Login</p>
+                  <p>{formatDate(user.lastLogin)}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
+                <div className="p-2 bg-orange-50 dark:bg-orange-900/20 text-orange-500 rounded-lg">
+                  <FiLogOut className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-gray-200">Last Signout</p>
+                  <p>{formatDate(user.lastLogout)}</p>
+                </div>
+              </div>
+            </div>
           </td>
         </tr>
       )}
