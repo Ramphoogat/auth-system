@@ -245,53 +245,52 @@ const AdminDashboard = () => {
                   Manage user roles and permissions.
                 </p>
               </div>
-              <div className="flex items-center gap-3 relative">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setIsCreateUserModalOpen(true)}
+                  className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-emerald-500 text-white hover:bg-red-400 transition-all shadow-sm"
+                >
+                  Create
+                </button>
+
+                {/*Import CSV Button*/}
+                <input type="file" id="csvInput" accept=".csv" className="hidden" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    console.log("Selected file:", file);
+                    // parshing the csv here
+                  }
+                }} />
+                <button
+                  onClick={() => document.getElementById("csvInput")?.click()}
+                  className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-gray-500 text-white hover:bg-emerald-400 transition-all shadow-sm"
+                >
+                  Import CSV
+                </button>
+
+                {/*Export CSV Button*/}
+                <button
+                  onClick={() => {
+                    const csvContent = "data:text/csv;charset=utf-8," + ["Name,Email,Role"].concat(users.map((u) => `${u.name || ''},${u.email},${u.role}`)).join("\n");
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", "users.csv");
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-gray-500 text-gray-200 hover:bg-red-400 transition-all shadow-sm"
+                >
+                  Export CSV
+                </button>
+
                 <div className="relative">
-
-                  <button
-                    onClick={() => setIsCreateUserModalOpen(true)}
-                    className="absolute right-70 w-20 h-8 px-3 py-1.5 text-[10px] font-bold rounded-lg bg-emerald-500 text-white hover:bg-red-400 transition-all shadow-sm"
-                  >
-                    Create
-                  </button>
-
-
-                  {/*Import CSV Button*/}
-                  <input type="file" id="csvInput" accept=".csv" className="hidden" onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      console.log("Selected file:", file);
-                      // parshing the csv here
-
-                    }
-                  }} />
-                  <button
-                    onClick={() => document.getElementById("csvInput")?.click()}
-                    className="absolute right-45 w-20 h-8 px-3 py-1.5 text-[10px] font-bold rounded-lg bg-gray-500 text-white hover:bg-emerald-400 transition-all shadow-sm"
-                  >Import CSV
-                  </button>
-
-                  {/*Export CSV Button*/}
-                  <button
-                    onClick={() => {
-                      const csvContent = "data:text/csv;charset=utf-8," + ["Name,Email,Role"].concat(users.map((u) => `${u.name || ''},${u.email},${u.role}`)).join("\n");
-                      const encodedUri = encodeURI(csvContent);
-                      const link = document.createElement("a");
-                      link.setAttribute("href", encodedUri);
-                      link.setAttribute("download", "users.csv");
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    }}
-                    className="absolute right-20 w-20 h-8 px-3 py-1.5 text-[10px] font-bold rounded-lg bg-gray-500 text-gray-200 hover:bg-red-400 transition-all shadow-sm"
-                  >Export CSV
-                  </button>
-
                   <button
                     onClick={() => setIsRoleDropDownOpen(!isRoleDropDownOpen)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${roleFilter === "all"
+                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition-all border border-transparent ${roleFilter === "all"
                       ? "bg-white dark:bg-gray-700 shadow-sm text-indigo-500"
-                      : "text-gray-500 hover:text-indigo-500"
+                      : "text-gray-500 hover:text-indigo-500 border-gray-200 dark:border-gray-700"
                       }`}
                   >
                     {roleFilter.toUpperCase()}

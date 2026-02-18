@@ -7,6 +7,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import { FaGoogle, FaFacebook, FaTwitter } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useToast } from "../components/ToastProvider";
+import { useNotifications } from "../context/NotificationContext";
 
 const Login = () => {
   const [identifier, setIdentifier] = useState(""); // email or username
@@ -16,6 +17,7 @@ const Login = () => {
   const [emailForOtp, setEmailForOtp] = useState("");
 
   const { showSuccess } = useToast();
+  const { addNotification } = useNotifications();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +44,11 @@ const Login = () => {
           localStorage.setItem("last_user", identifier);
         }
         showSuccess("Logged in successfully!");
+        addNotification({
+          title: "Login Successful",
+          message: `Welcome back, ${identifier}!`,
+          type: "success",
+        });
         navigate("/dashboard");
         return;
       }
@@ -86,6 +93,11 @@ const Login = () => {
 
       // Redirect to unified dashboard
       showSuccess("Logged in successfully!");
+      addNotification({
+        title: "Login Verified",
+        message: "You have been successfully verified and logged in.",
+        type: "success",
+      });
       navigate("/dashboard");
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
@@ -103,6 +115,11 @@ const Login = () => {
       const payload = { email: emailForOtp };
       await api.post("/auth/resend-otp", payload);
       alert("OTP resent successfully!");
+      addNotification({
+        title: "OTP Resent",
+        message: `A new OTP has been sent to ${emailForOtp}`,
+        type: "info",
+      });
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         alert(error.response?.data?.message || "Failed to resend OTP");

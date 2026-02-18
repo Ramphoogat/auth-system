@@ -11,7 +11,6 @@ interface SystemSettings {
 const Settings: React.FC = () => {
   const { showSuccess, showError } = useToast();
   const [settings, setSettings] = useState<SystemSettings | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -21,8 +20,6 @@ const Settings: React.FC = () => {
       } catch (err) {
         console.error("Failed to load settings", err);
         showError("Failed to load system settings");
-      } finally {
-        setLoading(false);
       }
     };
     fetchSettings();
@@ -50,14 +47,6 @@ const Settings: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="p-12 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500 mx-auto"></div>
-      </div>
-    );
-  }
-
   if (!settings) return null;
 
   return (
@@ -81,17 +70,15 @@ const Settings: React.FC = () => {
               <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Enable or disable dynamic role management</p>
             </div>
           </div>
-          
+
           <button
             onClick={() => handleToggleSystem(!settings.roleSystemEnabled)}
-            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none self-end md:self-auto ${
-              settings.roleSystemEnabled ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
-            }`}
+            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none self-end md:self-auto ${settings.roleSystemEnabled ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
+              }`}
           >
             <span
-              className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-300 ${
-                settings.roleSystemEnabled ? "translate-x-7" : "translate-x-1"
-              }`}
+              className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-300 ${settings.roleSystemEnabled ? "translate-x-7" : "translate-x-1"
+                }`}
             />
           </button>
         </div>
@@ -100,91 +87,88 @@ const Settings: React.FC = () => {
       {/* Governance Modes */}
       <div className={`space-y-6 transition-opacity duration-300 ${settings.roleSystemEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
         <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 px-2 flex items-center">
-            <FiCpu className="mr-2"/> Governance Model
+          <FiCpu className="mr-2" /> Governance Model
         </h3>
-        
+
         <div
           className="grid grid-cols-1 md:[grid-template-columns:repeat(3,1fr)] md:[grid-template-rows:repeat(1,1fr)] gap-6 overflow-visible px-[5px]"
         >
-            {/* Mode 1 */}
-            <div 
-                onClick={() => handleModeChange("MODE_1")}
-                style={{ paddingLeft: '24px', paddingRight: '24px' }}
-                className={`relative cursor-pointer group p-5 md:p-6 rounded-3xl border-2 transition-all duration-300 ${
-                    settings.governanceMode === "MODE_1" 
-                    ? "bg-white dark:bg-gray-800 border-emerald-500 shadow-xl ring-2 ring-emerald-500" 
-                    : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:border-emerald-300 dark:hover:border-emerald-500/50"
-                }`}
-            >
-                {settings.governanceMode === "MODE_1" && (
-                    <div className="absolute top-4 right-4 text-emerald-500">
-                        <FiCheckCircle className="w-5 h-5 md:w-6 md:h-6" />
-                    </div>
-                )}
-                <div className="mb-4 p-2.5 md:p-3 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-2xl w-fit">
-                    <FiLock className="w-5 h-5 md:w-6 md:h-6" />
-                </div>
-                <h4 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2">Centralized Control</h4>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-4 font-medium uppercase tracking-wider">Mode 1 (Default)</p>
-                <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                     <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0"/>Admin -&gt; Everyone</li>
-                     <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0"/>No delegation power</li>
-                </ul>
+          {/* Mode 1 */}
+          <div
+            onClick={() => handleModeChange("MODE_1")}
+            style={{ paddingLeft: '24px', paddingRight: '24px' }}
+            className={`relative cursor-pointer group p-5 md:p-6 rounded-3xl border-2 transition-all duration-300 ${settings.governanceMode === "MODE_1"
+              ? "bg-white dark:bg-gray-800 border-emerald-500 shadow-xl ring-2 ring-emerald-500"
+              : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:border-emerald-300 dark:hover:border-emerald-500/50"
+              }`}
+          >
+            {settings.governanceMode === "MODE_1" && (
+              <div className="absolute top-4 right-4 text-emerald-500">
+                <FiCheckCircle className="w-5 h-5 md:w-6 md:h-6" />
+              </div>
+            )}
+            <div className="mb-4 p-2.5 md:p-3 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-2xl w-fit">
+              <FiLock className="w-5 h-5 md:w-6 md:h-6" />
             </div>
+            <h4 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2">Centralized Control</h4>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-4 font-medium uppercase tracking-wider">Mode 1 (Default)</p>
+            <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-2">
+              <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0" />Admin -&gt; Everyone</li>
+              <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0" />No delegation power</li>
+            </ul>
+          </div>
 
-            {/* Mode 2 */}
-            <div 
-                onClick={() => handleModeChange("MODE_2")}
-                style={{ paddingLeft: '24px', paddingRight: '24px' }}
-                className={`relative cursor-pointer group p-5 md:p-6 rounded-3xl border-2 transition-all duration-300 ${
-                    settings.governanceMode === "MODE_2" 
-                    ? "bg-white dark:bg-gray-800 border-emerald-500 shadow-xl ring-2 ring-emerald-500" 
-                    : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:border-emerald-300 dark:hover:border-emerald-500/50"
-                }`}
-            >
-                {settings.governanceMode === "MODE_2" && (
-                     <div className="absolute top-4 right-4 text-emerald-500">
-                        <FiCheckCircle className="w-5 h-5 md:w-6 md:h-6" />
-                    </div>
-                )}
-                <div className="mb-4 p-2.5 md:p-3 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-2xl w-fit">
-                    <FiLock className="w-5 h-5 md:w-6 md:h-6" />
-                </div>
-                <h4 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2">Strict Hierarchy</h4>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-4 font-medium uppercase tracking-wider">Mode 2</p>
-                <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                    <li className="flex items-center text-emerald-600 dark:text-emerald-400 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 shrink-0"/>Admin: Author → Admin</li>
-                    <li className="flex items-center text-blue-600 dark:text-blue-400 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 shrink-0"/>Author: Editor → Author</li>
-                    <li className="flex items-center text-cyan-600 dark:text-cyan-400 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-cyan-500 mr-2 shrink-0"/>Editor: User → Editor</li>
-                </ul>
+          {/* Mode 2 */}
+          <div
+            onClick={() => handleModeChange("MODE_2")}
+            style={{ paddingLeft: '24px', paddingRight: '24px' }}
+            className={`relative cursor-pointer group p-5 md:p-6 rounded-3xl border-2 transition-all duration-300 ${settings.governanceMode === "MODE_2"
+              ? "bg-white dark:bg-gray-800 border-emerald-500 shadow-xl ring-2 ring-emerald-500"
+              : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:border-emerald-300 dark:hover:border-emerald-500/50"
+              }`}
+          >
+            {settings.governanceMode === "MODE_2" && (
+              <div className="absolute top-4 right-4 text-emerald-500">
+                <FiCheckCircle className="w-5 h-5 md:w-6 md:h-6" />
+              </div>
+            )}
+            <div className="mb-4 p-2.5 md:p-3 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-2xl w-fit">
+              <FiLock className="w-5 h-5 md:w-6 md:h-6" />
             </div>
+            <h4 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2">Strict Hierarchy</h4>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-4 font-medium uppercase tracking-wider">Mode 2</p>
+            <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-2">
+              <li className="flex items-center text-emerald-600 dark:text-emerald-400 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 shrink-0" />Admin: Author → Admin</li>
+              <li className="flex items-center text-blue-600 dark:text-blue-400 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 shrink-0" />Author: Editor → Author</li>
+              <li className="flex items-center text-cyan-600 dark:text-cyan-400 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-cyan-500 mr-2 shrink-0" />Editor: User → Editor</li>
+            </ul>
+          </div>
 
-             {/* Mode 3 */}
-             <div 
-                onClick={() => handleModeChange("MODE_3")}
-                style={{ paddingLeft: '24px', paddingRight: '24px' }}
-                className={`relative cursor-pointer group p-5 md:p-6 rounded-3xl border-2 transition-all duration-300 ${
-                    settings.governanceMode === "MODE_3" 
-                    ? "bg-white dark:bg-gray-800 border-emerald-500 shadow-xl ring-2 ring-emerald-500" 
-                    : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:border-emerald-300 dark:hover:border-emerald-500/50"
-                }`}
-            >
-                {settings.governanceMode === "MODE_3" && (
-                     <div className="absolute top-4 right-4 text-emerald-500">
-                        <FiCheckCircle className="w-5 h-5 md:w-6 md:h-6" />
-                    </div>
-                )}
-                <div className="mb-4 p-2.5 md:p-3 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-2xl w-fit">
-                    <FiLock className="w-5 h-5 md:w-6 md:h-6" />
-                </div>
-                <h4 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2">Layered Delegation</h4>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-4 font-medium uppercase tracking-wider">Mode 3</p>
-                <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                     <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0"/>Admin -&gt; Everyone</li>
-                     <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0"/>Author -&gt; Editor, User</li>
-                     <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0"/>Editor -&gt; User</li>
-                </ul>
+          {/* Mode 3 */}
+          <div
+            onClick={() => handleModeChange("MODE_3")}
+            style={{ paddingLeft: '24px', paddingRight: '24px' }}
+            className={`relative cursor-pointer group p-5 md:p-6 rounded-3xl border-2 transition-all duration-300 ${settings.governanceMode === "MODE_3"
+              ? "bg-white dark:bg-gray-800 border-emerald-500 shadow-xl ring-2 ring-emerald-500"
+              : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 hover:border-emerald-300 dark:hover:border-emerald-500/50"
+              }`}
+          >
+            {settings.governanceMode === "MODE_3" && (
+              <div className="absolute top-4 right-4 text-emerald-500">
+                <FiCheckCircle className="w-5 h-5 md:w-6 md:h-6" />
+              </div>
+            )}
+            <div className="mb-4 p-2.5 md:p-3 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-2xl w-fit">
+              <FiLock className="w-5 h-5 md:w-6 md:h-6" />
             </div>
+            <h4 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2">Layered Delegation</h4>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-4 font-medium uppercase tracking-wider">Mode 3</p>
+            <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-2">
+              <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0" />Admin -&gt; Everyone</li>
+              <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0" />Author -&gt; Editor, User</li>
+              <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 shrink-0" />Editor -&gt; User</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

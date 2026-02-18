@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FiCheck, FiX, FiUser, FiClock } from 'react-icons/fi';
 import api from '../api/axios';
 import { useToast } from './ToastProvider';
@@ -21,25 +21,7 @@ interface IRequest {
 
 const Requests: React.FC = () => {
     const [requests, setRequests] = useState<IRequest[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const { showSuccess, showError } = useToast();
-
-    const fetchRequests = async () => {
-        try {
-            setIsLoading(true);
-            const response = await api.get('/auth/role-requests'); // Assuming this endpoint exists
-            setRequests(response.data.requests || []);
-        } catch (error) {
-            console.error("Failed to fetch requests", error);
-            // Fallback to empty list or show error, but don't crash
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchRequests();
-    }, []);
 
     const handleApprove = async (id: string, userId: string, requestedRole: string) => {
         try {
@@ -62,14 +44,6 @@ const Requests: React.FC = () => {
             showError("Failed to reject request");
         }
     };
-
-    if (isLoading) {
-        return (
-            <div className="w-full mt-8 p-8 flex justify-center items-center bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
-            </div>
-        );
-    }
 
     return (
         <div className="w-full bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden animate-in fade-in duration-500">
