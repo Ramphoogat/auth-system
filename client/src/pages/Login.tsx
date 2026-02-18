@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import api from "../api/axios";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import LightRays from "../components/LightRays";
 import ThemeToggle from "../components/ThemeToggle";
+import { FaGoogle, FaFacebook, FaTwitter } from "react-icons/fa";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useToast } from "../components/ToastProvider";
 
 const Login = () => {
   const [identifier, setIdentifier] = useState(""); // email or username
@@ -12,6 +15,8 @@ const Login = () => {
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
   const [emailForOtp, setEmailForOtp] = useState("");
 
+  const { showSuccess } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,8 +29,23 @@ const Login = () => {
       const { data } = await api.post("/auth/login", {
         identifier,
         password,
-        // No role - backend uses stored role
       });
+
+      if (data.token) {
+        if (rememberMe) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("role", data.result.role);
+          localStorage.setItem("last_user", identifier);
+        } else {
+          sessionStorage.setItem("token", data.token);
+          sessionStorage.setItem("role", data.result.role);
+          localStorage.setItem("last_user", identifier);
+        }
+        showSuccess("Logged in successfully!");
+        navigate("/dashboard");
+        return;
+      }
+
       setEmailForOtp(data.email);
       setStep("otp");
     } catch (error: unknown) {
@@ -47,15 +67,12 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const payload = { 
-        email: emailForOtp, 
+      const payload = {
+        email: emailForOtp,
         otp
-        // No role - backend uses stored role
       };
 
       const { data } = await api.post("/auth/verify-otp", payload);
-
-      const userRole = data.result.role;
 
       if (rememberMe) {
         localStorage.setItem("token", data.token);
@@ -67,16 +84,9 @@ const Login = () => {
         localStorage.setItem("last_user", identifier);
       }
 
-      // Redirect based on role
-      if (userRole === "admin") {
-        navigate("/admin/dashboard");
-      } else if (userRole === "author") {
-        navigate("/author/dashboard");
-      } else if (userRole === "editor") {
-        navigate("/editor/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
+      // Redirect to unified dashboard
+      showSuccess("Logged in successfully!");
+      navigate("/dashboard");
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         alert(error.response?.data?.message || "Verification failed");
@@ -106,6 +116,19 @@ const Login = () => {
         {/* Theme Toggle in Corner */}
         <div className="fixed top-6 right-6 z-20">
           <ThemeToggle />
+        </div>
+
+        {/* Back to Home Button */}
+        <div className="fixed top-6 left-6 z-20">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white rounded-xl transition-all duration-300 group shadow-lg"
+          >
+            <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span className="text-xs font-bold uppercase tracking-wider">Back to Home</span>
+          </button>
         </div>
 
         {/* LightRays Background */}
@@ -147,42 +170,49 @@ const Login = () => {
           {step === "credentials" ? (
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-5">
-                  <div>
-                    <label
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                      htmlFor="identifier"
-                    >
-                      Username or Email
-                    </label>
+                <div>
+                  <label
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                    htmlFor="identifier"
+                  >
+                    Username or Email
+                  </label>
+                  <input
+                    id="identifier"
+                    type="text"
+                    placeholder="Enter your username or email"
+                    className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-1 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                    htmlFor="password"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
                     <input
-                      id="identifier"
-                      type="text"
-                      placeholder="Enter your username or email"
-                      className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-1 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-1 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500 pr-10"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                     />
-                  </div>
-                  <div>
-                    <label
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                      htmlFor="password"
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors cursor-pointer"
                     >
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-1 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                    </div>
+                      {showPassword ? <FiEye size={20} /> : <FiEyeOff size={20} />}
+                    </button>
                   </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-between text-sm py-1">
@@ -251,6 +281,39 @@ const Login = () => {
                   </>
                 )}
               </button>
+
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 rounded-lg">Or continue with</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <button
+                  type="button"
+                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
+                  title="Google"
+                >
+                  <FaGoogle className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-red-500 transition-colors" />
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
+                  title="Facebook"
+                >
+                  <FaFacebook className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 transition-colors" />
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
+                  title="Twitter"
+                >
+                  <FaTwitter className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-sky-500 transition-colors" />
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-5">
@@ -264,7 +327,7 @@ const Login = () => {
                 <input
                   id="otp"
                   type="text"
-                  placeholder="Enter 6-digit OTP" // Assuming 6 digits
+                  placeholder="Enter 6-digit OTP"
                   className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-500 text-center tracking-widest text-lg"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}

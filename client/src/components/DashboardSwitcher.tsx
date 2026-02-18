@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { FiLayout, FiEdit3, FiFeather, FiShield, FiChevronDown } from 'react-icons/fi';
 import type { UserRole } from '../utils/rolePermissions';
 import { getNavigationItems, getRoleDisplayName } from '../utils/rolePermissions';
@@ -7,13 +6,12 @@ import { decodeJwt } from '../utils/jwtUtils';
 
 
 const DashboardSwitcher: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [activeRole, setActiveRole] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get role from token
+    // Get role from token (User's actual permissions)
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (token) {
       const payload = decodeJwt(token);
@@ -21,6 +19,10 @@ const DashboardSwitcher: React.FC = () => {
         setUserRole(payload.role as UserRole);
       }
     }
+
+    // Get current active view role from storage
+    const storedRole = localStorage.getItem('role') || sessionStorage.getItem('role');
+    setActiveRole(storedRole);
   }, []);
 
 
@@ -31,10 +33,8 @@ const DashboardSwitcher: React.FC = () => {
   // Don't show switcher if user only has access to one dashboard (safety check)
   if (navItems.length <= 1) return null;
 
-  // Find current active dashboard (partial match to handle sub-routes)
-  const currentDashboard = navItems.find(item =>
-    location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)
-  ) || navItems[0];
+  // Find current active dashboard based on stored activeRole
+  const currentDashboard = navItems.find(item => item.role === activeRole) || navItems[0];
 
   const getIcon = (role: string) => {
     switch (role) {
@@ -75,7 +75,7 @@ const DashboardSwitcher: React.FC = () => {
 
           <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
             <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Your Workspace</p>
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Dashboard Switcher</p>
               <div className="flex items-center justify-between mt-1">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{getRoleDisplayName(userRole)}</p>
                 <span className="text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium">
@@ -86,13 +86,16 @@ const DashboardSwitcher: React.FC = () => {
 
             <div className="p-2 space-y-1">
               {navItems.map((item) => {
-                const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+                const isActive = item.role === activeRole;
                 return (
                   <button
-                    key={item.path}
+                    key={item.path + item.role}
                     onClick={() => {
-                      navigate(item.path);
+                      localStorage.setItem('role', item.role);
+                      setActiveRole(item.role);
                       setIsOpen(false);
+                      // Force reload to apply new dashboard role since UnifiedDashboard reads from storage on mount
+                      window.location.reload();
                     }}
                     className={`w-full flex items-start space-x-3 px-3 py-3 rounded-xl transition-all group ${isActive
                       ? 'bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20'

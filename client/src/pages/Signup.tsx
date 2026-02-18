@@ -4,12 +4,14 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import LightRays from "../components/LightRays";
 import ThemeToggle from "../components/ThemeToggle";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const Signup = () => {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -68,6 +70,19 @@ const Signup = () => {
       {/* Theme Toggle in Corner */}
       <div className="fixed top-6 right-6 z-20">
         <ThemeToggle />
+      </div>
+
+      {/* Back to Home Button */}
+      <div className="fixed top-6 left-6 z-20">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white rounded-xl transition-all duration-300 group shadow-lg"
+        >
+          <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="text-xs font-bold uppercase tracking-wider">Back to Home</span>
+        </button>
       </div>
 
       {/* LightRays Background */}
@@ -144,20 +159,27 @@ const Signup = () => {
               />
             </div>
 
-            <div>
+            <div className="relative">
               <label className="sr-only" htmlFor="password">
                 Password
               </label>
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 outline-none pr-10"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors cursor-pointer"
+              >
+                {showPassword ? <FiEye size={20} /> : <FiEyeOff size={20} />}
+              </button>
             </div>
 
             <div className="flex items-start">

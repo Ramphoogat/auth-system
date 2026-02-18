@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   FiUsers,
   FiActivity,
@@ -7,11 +7,13 @@ import {
   FiEdit,
   FiShield,
   FiChevronDown,
+  FiFileText,
 } from "react-icons/fi";
 import api from "../../api/axios";
 import { AxiosError } from "axios";
 import DashboardLayout from "../../components/DashboardLayout";
 import ProfileEditModal from "../../components/ProfileEditModal";
+import Loader from "../../components/Loader";
 import {
   type IUser,
   type IAdminStats,
@@ -19,10 +21,12 @@ import {
 } from "./AuthorComponents";
 import { UserManagementRow } from "../admin/AdminComponents";
 import { useToast } from "../../components/ToastProvider";
+import { useDashboardSlug } from "../../components/url_slug";
+import FormSection from "../../components/FormSection";
+import Requests from "../../components/requests";
 
 const AuthorDashboard = () => {
   const navigate = useNavigate();
-  const { section } = useParams<{ section?: string }>();
   const [authorName, setAuthorName] = useState("Author");
   const [authorEmail, setAuthorEmail] = useState("");
   const [authorUsername, setAuthorUsername] = useState("");
@@ -31,11 +35,12 @@ const AuthorDashboard = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [statsData, setStatsData] = useState<IAdminStats | null>(null);
   const [notifications, setNotifications] = useState<INotification[]>([]);
-  const [activeTab, setActiveTab] = useState<"Overview" | "Management">("Overview");
+  const idToSlug = { Overview: "overview", Management: "management", RoleChange: "RoleChange", Requests: "requests" };
+  const { activeTab, handleTabChange } = useDashboardSlug(idToSlug, "Overview");
+
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [governanceMode, setGovernanceMode] = useState<string>("MODE_1");
-
   const [roleFilter, setRoleFilter] = useState("all");
   const [isRoleDropDownOpen, setIsRoleDropDownOpen] = useState(false);
   const { showSuccess, showError } = useToast();
@@ -77,7 +82,6 @@ const AuthorDashboard = () => {
           isRead: false,
         }]);
 
-        // Fetch settings for governance mode
         try {
           const settingsRes = await api.get("/settings");
           setGovernanceMode(settingsRes.data.governanceMode);
@@ -113,55 +117,23 @@ const AuthorDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
-    navigate("/login");
+    showSuccess("You have been logged out successfully");
+    navigate("/");
   };
 
   const sidebarItems = [
     { icon: <FiLayout />, label: "Overview", id: "Overview" },
     { icon: <FiShield />, label: "Management", id: "Management" },
+    { icon: <FiFileText />, label: "Role Request", id: "RoleChange" },
+    { icon: <FiFileText />, label: "Requests", id: "Requests" },
   ];
-
-  // Map ids <-> slugs
-  const idToSlug: Record<string, string> = {
-    Overview: "overview",
-    Management: "management",
-  };
-  const slugToId: Record<string, string> = Object.fromEntries(
-    Object.entries(idToSlug).map(([k, v]) => [v.toLowerCase(), k]),
-  );
-
-  // On mount / when URL changes, sync active tab
-  useEffect(() => {
-    if (section) {
-      const mapped = slugToId[section.toLowerCase()] || "Overview";
-      setActiveTab(mapped as "Overview" | "Management");
-    } else {
-      // ensure URL shows default slug
-      const defaultSlug = idToSlug["Overview"];
-      navigate(`/author/dashboard/${defaultSlug}`, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section]);
-
-  // Pass a handler that navigates + updates state
-  const handleTabChange = (id: string) => {
-    const slug = idToSlug[id] || idToSlug["Overview"];
-    navigate(`/author/dashboard/${slug}`);
-    setActiveTab(id as "Overview" | "Management");
-  };
 
   const stats = [
     { title: "Total Consumers", value: statsData?.totalUsers || "0", change: "+15%", icon: <FiUsers className="w-6 h-6" /> },
     { title: "Active Readers", value: statsData?.activeUsers || "0", change: "+5%", icon: <FiActivity className="w-6 h-6" /> },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-      </div>
-    );
-  }
+
 
   return (
     <DashboardLayout
@@ -182,7 +154,11 @@ const AuthorDashboard = () => {
       isScrollable={false}
     >
       <div className="h-full flex flex-col animate-in fade-in duration-500">
-        {activeTab === "Overview" ? (
+        {isLoading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader text="Loading your studio..." />
+          </div>
+        ) : activeTab === "Overview" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar pr-2 space-y-8">
             <div className="mb-6">
               <h1 className="text-2xl lg:text-4xl font-black dark:text-white tracking-tight">Studio Overview</h1>
@@ -219,6 +195,18 @@ const AuthorDashboard = () => {
                 </p>
               </div>
             </div>
+          </div>
+        ) : activeTab === "RoleChange" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <FormSection />
+          </div>
+        ) : activeTab === "Requests" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold dark:text-white">Role Requests</h1>
+              <p className="text-sm text-gray-500">Track and manage role updates.</p>
+            </div>
+            <Requests />
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto no-scrollbar animate-in slide-in-from-bottom-4 duration-500">
@@ -304,7 +292,7 @@ const AuthorDashboard = () => {
             </div>
           </div>
         )}
-      </div>
+      </div >
 
       <ProfileEditModal
         isOpen={isProfileModalOpen}
@@ -312,7 +300,7 @@ const AuthorDashboard = () => {
         currentUser={{ name: authorName, username: authorUsername, email: authorEmail }}
         onUpdate={() => setRefreshTrigger(prev => prev + 1)}
       />
-    </DashboardLayout>
+    </DashboardLayout >
   );
 };
 

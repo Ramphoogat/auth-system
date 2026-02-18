@@ -1,25 +1,32 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { FiUsers, FiActivity, FiLayout, FiCheckCircle } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { FiUsers, FiActivity, FiLayout, FiCheckCircle, FiFileText } from "react-icons/fi";
 import api from "../../api/axios";
 import { AxiosError } from "axios";
 import DashboardLayout from "../../components/DashboardLayout";
 import ProfileEditModal from "../../components/ProfileEditModal";
+import Loader from "../../components/Loader";
 import { type IUser, type INotification } from "./UsersComponents";
 import { UserManagementRow } from "../admin/AdminComponents";
+import { useDashboardSlug } from "../../components/url_slug";
+import FormSection from "../../components/FormSection";
+import { useToast } from "../../components/ToastProvider";
 
 const UserDashboard = () => {
   const navigate = useNavigate();
-  const { section } = useParams<{ section?: string }>();
+  const { showSuccess } = useToast();
   const [userName, setUserName] = useState("User");
   const [userEmail, setUserEmail] = useState("");
   const [userUsername, setUserUsername] = useState("");
   const [userRole, setUserRole] = useState("user");
   const [isLoading, setIsLoading] = useState(true);
   const [notifications, setNotifications] = useState<INotification[]>([]);
-  const [activeTab, setActiveTab] = useState<"Overview" | "UserManagement">(
-    "Overview",
-  );
+  const idToSlug = {
+    Overview: "Overview",
+    UserManagement: "UserManagement",
+    RoleChange: "RoleChange",
+  };
+  const { activeTab, handleTabChange } = useDashboardSlug(idToSlug, "Overview");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [users, setUsers] = useState<IUser[]>([]);
@@ -69,7 +76,7 @@ const UserDashboard = () => {
   }, [navigate, refreshTrigger]);
 
   useEffect(() => {
-    if (activeTab === "UserManagement") {
+    if (activeTab) {
       const fetchUsers = async () => {
         try {
           const res = await api.get("/auth/users");
@@ -82,45 +89,25 @@ const UserDashboard = () => {
     }
   }, [activeTab]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      if (userEmail) {
+        await api.post("/auth/logout", { email: userEmail });
+      }
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
-    navigate("/login");
+    showSuccess("You have been logged out successfully");
+    navigate("/");
   };
 
   const sidebarItems = [
     { icon: <FiLayout />, label: "Overview", id: "Overview" },
     { icon: <FiUsers />, label: "Management", id: "UserManagement" },
+    { icon: <FiFileText />, label: "Role Request", id: "RoleChange" },
   ];
-
-  // Map ids <-> slugs
-  const idToSlug: Record<string, string> = {
-    Overview: "overview",
-    UserManagement: "management",
-  };
-  const slugToId: Record<string, string> = Object.fromEntries(
-    Object.entries(idToSlug).map(([k, v]) => [v.toLowerCase(), k]),
-  );
-
-  // On mount / when URL changes, sync active tab
-  useEffect(() => {
-    if (section) {
-      const mapped = slugToId[section.toLowerCase()] || "Overview";
-      setActiveTab(mapped as "Overview" | "UserManagement");
-    } else {
-      // ensure URL shows default slug
-      const defaultSlug = idToSlug["Overview"];
-      navigate(`/dashboard/${defaultSlug}`, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section]);
-
-  // Pass a handler that navigates + updates state
-  const handleTabChange = (id: string) => {
-    const slug = idToSlug[id] || idToSlug["Overview"];
-    navigate(`/dashboard/${slug}`);
-    setActiveTab(id as "Overview" | "UserManagement");
-  };
 
   const stats = [
     {
@@ -137,13 +124,7 @@ const UserDashboard = () => {
     },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+
 
   return (
     <DashboardLayout
@@ -164,7 +145,11 @@ const UserDashboard = () => {
       isScrollable={false}
     >
       <div className="h-full flex flex-col animate-in fade-in duration-500">
-        {activeTab === "Overview" ? (
+        {isLoading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader text="Loading your workspace..." />
+          </div>
+        ) : activeTab === "Overview" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
             <div className="mb-6">
               <h1 className="text-2xl lg:text-3xl font-bold dark:text-white">
@@ -215,6 +200,10 @@ const UserDashboard = () => {
                 </p>
               </div>
             </div>
+          </div>
+        ) : activeTab === "RoleChange" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            <FormSection />
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto no-scrollbar animate-in slide-in-from-bottom-4 duration-500">

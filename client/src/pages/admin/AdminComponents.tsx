@@ -148,7 +148,17 @@ export const UserManagementRow = ({
               {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
             </button>
             <img
-              src={`https://unavatar.io/${encodeURIComponent(user.email)}?fallback=https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.username)}&background=random`}
+              src={
+                user.email
+                  ? `https://unavatar.io/${encodeURIComponent(user.email)}?fallback=${encodeURIComponent(
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user.name || user.username
+                    )}&background=random`
+                  )}`
+                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    user.name || user.username
+                  )}&background=random`
+              }
               alt={user.username}
               className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-gray-200 dark:border-gray-600 object-cover shadow-sm group-hover:scale-110 transition-transform duration-300 mr-2 md:mr-3"
             />
@@ -172,11 +182,11 @@ export const UserManagementRow = ({
         </td>
         <td className="hidden md:table-cell px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">
           <div className="flex items-center space-x-2">
-            <div className="relative group">
-              <span className="truncate max-w-[150px] cursor-pointer block text-gray-900 dark:text-gray-100 font-medium hover:text-emerald-500 transition-colors">
+            <div className="relative">
+              <span className="peer truncate max-w-[150px] cursor-pointer block text-gray-900 dark:text-gray-100 font-medium hover:text-emerald-500 transition-colors">
                 {user.email}
               </span>
-              <div className="absolute left-0 bottom-full top-auto mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-[999] whitespace-nowrap transform translate-y-2 group-hover:translate-y-0">
+              <div className="absolute left-0 bottom-full top-auto mb-2 opacity-0 peer-hover:opacity-100 transition-all duration-200 pointer-events-none z-[999] whitespace-nowrap transform translate-y-2 peer-hover:translate-y-0">
                 <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md text-gray-800 dark:text-gray-200 text-xs px-3 py-1.5 rounded-full shadow-xl border border-gray-200 dark:border-gray-700 flex items-center gap-2">
                   <span>{user.email}</span>
                 </div>
@@ -214,6 +224,9 @@ export const UserManagementRow = ({
         <td className="px-4 md:px-6 py-4" onClick={(e) => e.stopPropagation()}>
           {allowedRoles.length > 0 ? (
             <select
+              id={`role-select-${user._id}`}
+              name={`role-${user._id}`}
+              aria-label="Select user role"
               value={user.role}
               onChange={handleRoleChange}
               disabled={isChanging}

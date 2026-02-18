@@ -36,18 +36,8 @@ export function getAccessibleDashboards(userRole: UserRole): DashboardType[] {
 /**
  * Get the default dashboard for a role
  */
-export function getDefaultDashboard(userRole: UserRole): string {
-  switch (userRole) {
-    case 'admin':
-      return '/admin/dashboard';
-    case 'author':
-      return '/author/dashboard';
-    case 'editor':
-      return '/editor/dashboard';
-    case 'user':
-    default:
-      return '/dashboard';
-  }
+export function getDefaultDashboard(): string {
+  return '/dashboard';
 }
 
 export interface NavItem {
@@ -70,19 +60,19 @@ export function getNavigationItems(userRole: UserRole): NavItem[] {
     },
     {
       name: 'Editor',
-      path: '/editor/dashboard',
+      path: '/dashboard',
       role: 'editor',
       description: 'Content editing workspace',
     },
     {
       name: 'Author',
-      path: '/author/dashboard',
+      path: '/dashboard',
       role: 'author',
       description: 'Content creation workspace',
     },
     {
       name: 'Admin',
-      path: '/admin/dashboard',
+      path: '/dashboard',
       role: 'admin',
       description: 'Administrative panel',
     },

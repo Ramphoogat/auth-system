@@ -13,6 +13,7 @@ export interface IUser extends Document {
   isHiddenAdmin?: boolean;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  otpGraceExpires?: Date;
 }
 
 const UserSchema: Schema = new Schema(
@@ -44,6 +45,7 @@ const UserSchema: Schema = new Schema(
     isVerified: { type: Boolean, default: false },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
+    otpGraceExpires: { type: Date },
   },
   { timestamps: true },
 );

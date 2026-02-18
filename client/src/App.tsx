@@ -2,19 +2,17 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
-import Dashboard from "./pages/users/userDashboard";
-import AdminDashboard from "./pages/admin/adminDashboard";
-import AuthorDashboard from "./pages/author/authorDashboard";
-import EditorDashboard from "./pages/editor/editorDashboard";
-import VerifyOtp from "./pages/VerifyOtp";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+import UnifiedDashboard from "./components/UnifiedDashboard";
+import VerifyOtp from "./components/VerifyOtp";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import HomePage from "./pages/landingpage/HomePage";
+import Error404 from "./components/error_404";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ToastProvider } from "./components/ToastProvider";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -33,64 +31,19 @@ function App() {
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-            {/* Protected User Dashboard - All roles can access */}
+            {/* Unified Dashboard Route - All authenticated users can access, role check inside */}
             <Route
               element={
                 <ProtectedRoute
                   allowedRoles={["user", "editor", "author", "admin"]}
-                  requiredDashboard="user"
                 />
               }
             >
-              <Route path="/dashboard/:section?" element={<Dashboard />} />
+              <Route path="/dashboard/:section?" element={<UnifiedDashboard />} />
             </Route>
 
-            {/* Protected Editor Dashboard - Editor, Author, Admin can access */}
-            <Route
-              element={
-                <ProtectedRoute
-                  allowedRoles={["editor", "author", "admin"]}
-                  requiredDashboard="editor"
-                />
-              }
-            >
-              <Route
-                path="/editor/dashboard/:section?"
-                element={<EditorDashboard />}
-              />
-            </Route>
-
-            {/* Protected Author Dashboard - Author, Admin can access */}
-            <Route
-              element={
-                <ProtectedRoute
-                  allowedRoles={["author", "admin"]}
-                  requiredDashboard="author"
-                />
-              }
-            >
-              <Route
-                path="/author/dashboard/:section?"
-                element={<AuthorDashboard />}
-              />
-            </Route>
-
-            {/* Protected Admin Dashboard - Admin only */}
-            <Route
-              element={
-                <ProtectedRoute
-                  allowedRoles={["admin"]}
-                  requiredDashboard="admin"
-                />
-              }
-            >
-              <Route
-                path="/admin/dashboard/:section?"
-                element={<AdminDashboard />}
-              />
-            </Route>
-
-            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="*" element={<Error404 />} />
           </Routes>
         </Router>
       </NotificationProvider>

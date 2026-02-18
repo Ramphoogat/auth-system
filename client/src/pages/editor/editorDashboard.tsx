@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   FiUsers,
   FiActivity,
@@ -7,11 +7,13 @@ import {
   FiType,
   FiShield,
   FiChevronDown,
+  FiFileText,
 } from "react-icons/fi";
 import api from "../../api/axios";
 import { AxiosError } from "axios";
 import DashboardLayout from "../../components/DashboardLayout";
 import ProfileEditModal from "../../components/ProfileEditModal";
+import Loader from "../../components/Loader";
 import {
   type IUser,
   type IAdminStats,
@@ -19,10 +21,12 @@ import {
 } from "./EditorComponents";
 import { UserManagementRow } from "../admin/AdminComponents";
 import { useToast } from "../../components/ToastProvider";
+import { useDashboardSlug } from "../../components/url_slug";
+import FormSection from "../../components/FormSection";
+import Requests from "../../components/requests";
 
 const EditorDashboard = () => {
   const navigate = useNavigate();
-  const { section } = useParams<{ section?: string }>();
   const [editorName, setEditorName] = useState("Editor");
   const [editorEmail, setEditorEmail] = useState("");
   const [editorUsername, setEditorUsername] = useState("");
@@ -31,7 +35,9 @@ const EditorDashboard = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [statsData, setStatsData] = useState<IAdminStats | null>(null);
   const [notifications, setNotifications] = useState<INotification[]>([]);
-  const [activeTab, setActiveTab] = useState<"Overview" | "Management">("Overview");
+  const idToSlug = { Overview: "overview", Management: "management", RoleChange: "RoleChange", Requests: "requests" };
+  const { activeTab, handleTabChange } = useDashboardSlug(idToSlug, "Overview");
+
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [governanceMode, setGovernanceMode] = useState<string>("MODE_1");
@@ -76,11 +82,9 @@ const EditorDashboard = () => {
           isRead: false,
         }]);
 
-        // Fetch settings for governance mode
         try {
           const settingsRes = await api.get("/settings");
           setGovernanceMode(settingsRes.data.governanceMode);
-
         } catch (err) {
           console.error("Failed to fetch settings", err);
         }
@@ -113,55 +117,23 @@ const EditorDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
-    navigate("/login");
+    showSuccess("You have been logged out successfully");
+    navigate("/");
   };
 
   const sidebarItems = [
     { icon: <FiLayout />, label: "Overview", id: "Overview" },
     { icon: <FiShield />, label: "Management", id: "Management" },
+    { icon: <FiFileText />, label: "Role Request", id: "RoleChange" },
+    { icon: <FiFileText />, label: "Requests", id: "Requests" },
   ];
-
-  // Map ids <-> slugs
-  const idToSlug: Record<string, string> = {
-    Overview: "overview",
-    Management: "management",
-  };
-  const slugToId: Record<string, string> = Object.fromEntries(
-    Object.entries(idToSlug).map(([k, v]) => [v.toLowerCase(), k]),
-  );
-
-  // On mount / when URL changes, sync active tab
-  useEffect(() => {
-    if (section) {
-      const mapped = slugToId[section.toLowerCase()] || "Overview";
-      setActiveTab(mapped as "Overview" | "Management");
-    } else {
-      // ensure URL shows default slug
-      const defaultSlug = idToSlug["Overview"];
-      navigate(`/editor/dashboard/${defaultSlug}`, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section]);
-
-  // Pass a handler that navigates + updates state
-  const handleTabChange = (id: string) => {
-    const slug = idToSlug[id] || idToSlug["Overview"];
-    navigate(`/editor/dashboard/${slug}`);
-    setActiveTab(id as "Overview" | "Management");
-  };
 
   const stats = [
     { title: "Total Readers", value: statsData?.totalUsers || "0", change: "+8%", icon: <FiUsers className="w-6 h-6" /> },
     { title: "Engagement", value: "Verified", change: "Stable", icon: <FiActivity className="w-6 h-6" /> },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
-      </div>
-    );
-  }
+
 
   return (
     <DashboardLayout
@@ -182,7 +154,11 @@ const EditorDashboard = () => {
       isScrollable={false}
     >
       <div className="h-full flex flex-col animate-in fade-in duration-500">
-        {activeTab === "Overview" ? (
+        {isLoading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader text="Loading editorial workspace..." />
+          </div>
+        ) : activeTab === "Overview" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
             <div className="mb-6">
               <h1 className="text-2xl md:text-3xl font-bold dark:text-white tracking-tight">Editorial Hub</h1>
@@ -213,6 +189,18 @@ const EditorDashboard = () => {
               <h3 className="text-lg md:text-xl font-bold mb-4">Editorial Queue</h3>
               <p className="text-sm text-gray-400 max-w-md mx-auto">The content moderation engine is being integrated. You'll soon be able to review pending posts and user comments here.</p>
             </div>
+          </div>
+        ) : activeTab === "RoleChange" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <FormSection />
+          </div>
+        ) : activeTab === "Requests" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <div className="mb-6">
+              <h1 className="text-2xl md:text-3xl font-bold dark:text-white tracking-tight">Access Requests</h1>
+              <p className="text-xs md:text-sm text-gray-500">Review pending role change applications.</p>
+            </div>
+            <Requests />
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto no-scrollbar animate-in slide-in-from-bottom-4 duration-500">
@@ -298,7 +286,7 @@ const EditorDashboard = () => {
             </div>
           </div>
         )}
-      </div>
+      </div >
 
       <ProfileEditModal
         isOpen={isProfileModalOpen}
@@ -306,7 +294,7 @@ const EditorDashboard = () => {
         currentUser={{ name: editorName, username: editorUsername, email: editorEmail }}
         onUpdate={() => setRefreshTrigger(prev => prev + 1)}
       />
-    </DashboardLayout>
+    </DashboardLayout >
   );
 };
 
