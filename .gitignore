@@ -20,3 +20,6 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Credentials File
+helical-rock-487907-g4-deb571829cc3.json

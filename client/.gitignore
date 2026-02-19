@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Credentials File
+helical-rock-487907-g4-deb571829cc3.json
