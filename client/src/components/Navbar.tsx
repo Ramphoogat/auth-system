@@ -1,5 +1,5 @@
 import { FiMenu, FiBell, FiSearch } from "react-icons/fi";
-import ThemeToggle from "./ThemeToggle";
+import ThemeComponent from "./ThemeComponent";
 import DashboardSwitcher from "./DashboardSwitcher";
 import NotificationCenter from "./NotificationCenter";
 import { useNotifications } from "../context/NotificationContext";
@@ -43,7 +43,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     <DashboardSwitcher />
                 </div>
                 <div className="scale-90 sm:scale-100">
-                    <ThemeToggle />
+                    <ThemeComponent />
                 </div>
                 {/* Notification Bell Starts here */}
                 <div className="relative">

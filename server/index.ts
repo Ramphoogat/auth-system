@@ -1,11 +1,13 @@
+// server restart trigger
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import dotenv from "dotenv";
 import authRoutes from "./src/routes/authRoutes.js";
 import settingsRoutes from "./src/routes/settings.js";
-
-dotenv.config();
+import sheetRoutes from "./src/routes/sheetRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +25,7 @@ app.get('/meta.json', (req, res) => res.status(204).end());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/sheets", sheetRoutes);
 
 app.get("/", (req, res) => {
   res.send("MERN Auth Server is running");

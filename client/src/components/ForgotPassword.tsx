@@ -3,7 +3,7 @@ import api from '../api/axios';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import LiquidChrome from './LightRays';
-import ThemeToggle from './ThemeToggle';
+import ThemeComponent from './ThemeComponent';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -30,7 +30,7 @@ const ForgotPassword = () => {
             <main className="relative min-h-screen w-full flex items-center justify-center bg-gray-900 p-4">
                 {/* Theme Toggle in Corner */}
                 <div className="fixed top-6 right-6 z-20">
-                    <ThemeToggle />
+                    <ThemeComponent />
                 </div>
 
                 {/* Liquid Chrome Background */}

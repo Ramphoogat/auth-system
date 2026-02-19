@@ -3,7 +3,7 @@ import api from "../api/axios";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import LightRays from "../components/LightRays";
-import ThemeToggle from "../components/ThemeToggle";
+import ThemeComponent from "../components/ThemeComponent";
 import { FaGoogle, FaFacebook, FaTwitter } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useToast } from "../components/ToastProvider";
@@ -132,7 +132,7 @@ const Login = () => {
       <main className="relative min-h-screen w-full flex justify-center p-4 py-12 md:py-20 bg-gray-900 overflow-y-auto no-scrollbar">
         {/* Theme Toggle in Corner */}
         <div className="fixed top-6 right-6 z-20">
-          <ThemeToggle />
+          <ThemeComponent />
         </div>
 
         {/* Back to Home Button */}
@@ -152,7 +152,7 @@ const Login = () => {
         <div className="fixed inset-0 z-0">
           <LightRays
             raysOrigin="top-center"
-            raysColor="#ffffff"
+            raysColor="#2616b5c7"
             raysSpeed={1}
             lightSpread={0.5}
             rayLength={3}
@@ -163,7 +163,7 @@ const Login = () => {
             className="custom-rays"
             pulsating={false}
             fadeDistance={1}
-            saturation={1}
+            saturation={10}
           />
         </div>
 

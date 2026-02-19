@@ -14,6 +14,12 @@ export interface IUser extends Document {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   otpGraceExpires?: Date;
+  
+  // timestamps
+  createdAt: Date;
+  updatedAt: Date;
+  lastLogin?: Date;
+  createdBy?: string; // Information about who created the user
 }
 
 const UserSchema: Schema = new Schema(
@@ -46,6 +52,7 @@ const UserSchema: Schema = new Schema(
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
     otpGraceExpires: { type: Date },
+    createdBy: { type: String }, // Stores username or email of creator
   },
   { timestamps: true },
 );

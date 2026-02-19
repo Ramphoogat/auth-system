@@ -3,7 +3,7 @@ import api from '../api/axios';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import LightRays from './LightRays';
-import ThemeToggle from './ThemeToggle';
+import ThemeComponent from './ThemeComponent';
 
 const ResetPassword = () => {
     const [password, setPassword] = useState('');
@@ -40,7 +40,7 @@ const ResetPassword = () => {
             <main className="relative min-h-screen w-full flex items-center justify-center bg-gray-900 p-4 overflow-y-auto no-scrollbar py-12 md:py-0">
                 {/* Theme Toggle in Corner */}
                 <div className="fixed top-6 right-6 z-20">
-                    <ThemeToggle />
+                    <ThemeComponent />
                 </div>
 
                 {/* LightRays Background */}

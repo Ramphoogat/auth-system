@@ -19,6 +19,7 @@ import {
   getRoleRequests,
   approveRoleRequest,
   rejectRoleRequest,
+  deleteUser,
 } from "../controllers/authController.js";
 import {
   authToken,
@@ -46,6 +47,7 @@ router.post("/admin/users", authToken, authEditor, createUser); // Admin, Author
 router.get("/overview", authToken, getOverview);
 router.get("/admin/logs", authToken, authAdmin, getServerLogs); // Admin Only
 router.put("/admin/users/:userId/role", authToken, authEditor, updateUserRole); // Admin, Author, Editor - Role Management (Restricted in controller)
+router.delete("/admin/users/:id", authToken, authAdmin, deleteUser); // Admin Only - Delete User
 
 // Role Requests
 router.post("/role-requests", authToken, createRoleRequest);

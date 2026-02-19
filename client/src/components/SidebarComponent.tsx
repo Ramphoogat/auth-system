@@ -24,7 +24,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
             }`}
         title={!isSidebarOpen ? label : ""}
     >
-        <div className="w-5 h-5 flex items-center justify-center shrink-0">
+        <div className="w-6 flex items-center justify-center shrink-0">
             <div
                 className={`transition-transform duration-300 ${active ? "scale-110" : "group-hover:scale-110"}`}
             >
@@ -144,6 +144,7 @@ const SidebarComponent: React.FC<SidebarComponentProps> = ({
                             onClick={() => onTabChange(item.id)}
                         />
                     ))}
+
                 </nav>
 
                 {/* User Card in Sidebar */}
@@ -227,7 +228,7 @@ const SidebarComponent: React.FC<SidebarComponentProps> = ({
                                 icon={item.icon}
                                 label={item.label}
                                 active={activeTab === item.id}
-                                isSidebarOpen={isSidebarOpen}
+                                isSidebarOpen={true}
                                 onClick={() => {
                                     onTabChange(item.id);
                                     setIsMobileMenuOpen(false);

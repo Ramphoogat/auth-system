@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import api from "../../api/axios";
+import api from "../api/axios";
 import { FiCpu, FiShield, FiLock, FiCheckCircle } from "react-icons/fi";
-import { useToast } from "../../components/ToastProvider";
+import { useToast } from "./ToastProvider";
+import { useTheme } from "../context/themeContext";
 
 interface SystemSettings {
   roleSystemEnabled: boolean;
@@ -171,6 +172,60 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Advanced Theme & Features */}
+      <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-[32px] border border-gray-200 dark:border-gray-700 shadow-xl transition-all duration-300 hover:shadow-2xl">
+        <div className="mb-6">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <FiCheckCircle className="text-indigo-500" />
+            Advanced UI Features
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Enable experimental or specialized visual themes.</p>
+        </div>
+
+        <div className="space-y-4">
+          <ThemeFeatureToggle
+            label="Neo-Brutalist Theme"
+            description="High contrast, bold borders, unpolished aesthetic."
+            feature="brutalist"
+          />
+          <ThemeFeatureToggle
+            label="MacOS Glassmorphism"
+            description="Frosted glass, blur effects, and smooth animations."
+            feature="macos"
+          />
+          <ThemeFeatureToggle
+            label="Hacker Terminal Mode"
+            description="Monospace fonts, green text on black, scanlines."
+            feature="terminal"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Helper component for theme toggles
+const ThemeFeatureToggle: React.FC<{ label: string; description: string; feature: "brutalist" | "macos" | "terminal" }> = ({ label, description, feature }) => {
+  const { enabledThemes, toggleThemeFeature } = useTheme();
+  const isEnabled = enabledThemes[feature];
+
+  return (
+    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl border border-gray-100 dark:border-gray-600">
+      <div>
+        <h3 className="font-bold text-gray-800 dark:text-gray-200">{label}</h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+      </div>
+      <button
+        onClick={() => toggleThemeFeature(feature)}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${isEnabled ? "bg-indigo-500" : "bg-gray-300 dark:bg-gray-600"
+          }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${isEnabled ? "translate-x-6" : "translate-x-1"
+            }`}
+        />
+      </button>
     </div>
   );
 };

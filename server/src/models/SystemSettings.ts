@@ -10,6 +10,13 @@ const systemSettingsSchema = new mongoose.Schema({
     enum: ["MODE_1", "MODE_2", "MODE_3"],
     default: "MODE_1",
   },
+  googleSheetId: {
+    type: String,
+    default: "",
+  },
+  lastSync: {
+    type: Date,
+  },
 });
 
 export default mongoose.model("SystemSettings", systemSettingsSchema);

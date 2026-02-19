@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import ThemeToggle from "../../components/ThemeToggle";
+import ThemeComponent from "../../components/ThemeComponent";
 import { FiArrowRight, FiShield, FiZap, FiLayout } from "react-icons/fi";
 import { useTheme } from "../../context/themeContext";
 
@@ -39,7 +39,7 @@ const HomePage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <ThemeToggle />
+                    <ThemeComponent />
                     {isLoggedIn ? (
                         <button
                             onClick={() => navigate("/dashboard")}
@@ -77,11 +77,6 @@ const HomePage: React.FC = () => {
                     Master Your <br />
                     <span className="bg-gradient-to-r from-emerald-500 via-cyan-500 to-emerald-500 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">Digital Realm</span>
                 </h1>
-
-                <p className="text-gray-600 dark:text-gray-400 text-lg md:text-2xl max-w-3xl mb-24 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-                    The ultra-premium management platform for modern teams.
-                    Experience control like never before with high-performance analytics and seamless workflows.
-                </p>
 
                 {/* Dashboard Preview Mockup */}
                 <div className="w-full max-w-5xl mx-auto relative group animate-in fade-in slide-in-from-bottom-12 duration-1200 delay-500 perspective-1000">

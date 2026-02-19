@@ -4,6 +4,10 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 export interface AuthRequest extends Request {
   userId?: string;
   userRole?: string;
+  user?: {
+    username?: string;
+    email?: string;
+  };
 }
 
 export const authToken = (
@@ -27,7 +31,7 @@ export const authToken = (
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload & { id?: any; _id?: any; role?: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload & { id?: any; _id?: any; role?: string, email?: string, username?: string };
     // tolerate id as string or ObjectId
     const decodedId = decoded.id ?? decoded._id;
     if (!decodedId) {
@@ -38,6 +42,10 @@ export const authToken = (
 
     req.userId = typeof decodedId === 'string' ? decodedId : String(decodedId);
     req.userRole = decoded.role;
+    req.user = {
+        email: decoded.email,
+        username: decoded.username // Ensure token has this or handle undefined
+    };
     next();
   } catch (err: any) {
     console.warn(`AuthToken: Token verification failed: ${err.message}`);

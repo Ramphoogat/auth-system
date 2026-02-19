@@ -3,7 +3,7 @@ import api from '../api/axios';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LightRays from './LightRays';
-import ThemeToggle from './ThemeToggle';
+import ThemeComponent from './ThemeComponent';
 import { useToast } from './ToastProvider';
 
 const VerifyOtp: React.FC = () => {
@@ -60,7 +60,7 @@ const VerifyOtp: React.FC = () => {
         <div className="font-display antialiased m-0 p-0 flex min-h-screen bg-gray-900 relative overflow-y-auto no-scrollbar py-12 md:py-0 items-center justify-center">
             {/* Theme Toggle in Corner */}
             <div className="fixed top-6 right-6 z-20">
-                <ThemeToggle />
+                <ThemeComponent />
             </div>
 
             {/* LightRays Background */}

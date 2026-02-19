@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiUsers, FiActivity, FiLayout, FiCheckCircle, FiFileText } from "react-icons/fi";
+import { FiUsers, FiActivity, FiLayout, FiCheckCircle, FiFileText, FiSettings } from "react-icons/fi";
 import api from "../../api/axios";
 import { AxiosError } from "axios";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -11,6 +11,7 @@ import { UserManagementRow } from "../admin/AdminComponents";
 import { useDashboardSlug } from "../../components/url_slug";
 import FormSection from "../../components/FormSection";
 import { useToast } from "../../components/ToastProvider";
+import UsersSettings from "../../components/UsersSettings";
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const UserDashboard = () => {
     Overview: "Overview",
     UserManagement: "UserManagement",
     RoleChange: "RoleChange",
+    Settings: "settings",
   };
   const { activeTab, handleTabChange } = useDashboardSlug(idToSlug, "Overview");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -107,6 +109,7 @@ const UserDashboard = () => {
     { icon: <FiLayout />, label: "Overview", id: "Overview" },
     { icon: <FiUsers />, label: "Management", id: "UserManagement" },
     { icon: <FiFileText />, label: "Role Request", id: "RoleChange" },
+    { icon: <FiSettings />, label: "Settings", id: "Settings" },
   ];
 
   const stats = [
@@ -204,6 +207,10 @@ const UserDashboard = () => {
         ) : activeTab === "RoleChange" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar">
             <FormSection />
+          </div>
+        ) : activeTab === "Settings" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <UsersSettings />
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto no-scrollbar animate-in slide-in-from-bottom-4 duration-500">

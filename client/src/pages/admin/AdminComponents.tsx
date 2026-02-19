@@ -16,6 +16,7 @@ export interface IUser {
   createdAt: string;
   lastLogin?: string;
   lastLogout?: string;
+  createdBy?: string;
 }
 
 export interface IAdminStats {
@@ -70,16 +71,21 @@ export const SidebarItem = ({
   </div>
 );
 
-import { FiChevronDown, FiChevronUp, FiCopy, FiCheck, FiClock, FiLogIn, FiLogOut, FiShield } from "react-icons/fi";
+import { FiChevronDown, FiChevronUp, FiCopy, FiCheck, FiShield } from "react-icons/fi";
+import Expanded from "../../components/Expanded";
 
 export const UserManagementRow = ({
   user,
   onRoleChange,
   allowedRoles = ["user", "author", "editor", "admin"],
+  isSelected,
+  onSelect,
 }: {
   user: IUser;
   onRoleChange: (userId: string, newRole: string) => Promise<void>;
   allowedRoles?: string[];
+  isSelected?: boolean;
+  onSelect?: (userId: string) => void;
 }) => {
   const [isChanging, setIsChanging] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -128,10 +134,7 @@ export const UserManagementRow = ({
     (r) => allowedRoles.includes(r) || r === user.role,
   );
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Never";
-    return new Date(dateString).toLocaleString();
-  };
+
 
   return (
     <>
@@ -139,6 +142,14 @@ export const UserManagementRow = ({
         className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group border-b border-gray-100 dark:border-gray-700 last:border-0 cursor-pointer ${isExpanded ? "bg-gray-50 dark:bg-gray-800/50" : ""}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
+        <td className="px-4 md:px-6 py-4" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+            checked={isSelected || false}
+            onChange={() => onSelect && onSelect(user._id)}
+          />
+        </td>
         <td className="px-4 md:px-6 py-4">
           <div className="flex items-center">
             <button
@@ -245,41 +256,7 @@ export const UserManagementRow = ({
           )}
         </td>
       </tr>
-      {isExpanded && (
-        <tr className="bg-gray-50/50 dark:bg-gray-800/30 animate-in fade-in slide-in-from-top-2 duration-200">
-          <td colSpan={5} className="px-4 md:px-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs md:text-sm p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-inner">
-              <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-lg">
-                  <FiClock className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 dark:text-gray-200">Joined</p>
-                  <p>{formatDate(user.createdAt)}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
-                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-lg">
-                  <FiLogIn className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 dark:text-gray-200">Last Login</p>
-                  <p>{formatDate(user.lastLogin)}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
-                <div className="p-2 bg-orange-50 dark:bg-orange-900/20 text-orange-500 rounded-lg">
-                  <FiLogOut className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 dark:text-gray-200">Last Signout</p>
-                  <p>{formatDate(user.lastLogout)}</p>
-                </div>
-              </div>
-            </div>
-          </td>
-        </tr>
-      )}
+      <Expanded user={user} isExpanded={isExpanded} />
     </>
   );
 };

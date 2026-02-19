@@ -6,6 +6,7 @@ import {
   FiActivity,
   FiShield,
   FiLayout,
+  FiTrash2,
 } from "react-icons/fi";
 
 import api from "../../api/axios";
@@ -16,8 +17,10 @@ import Loader from "../../components/Loader";
 import FormSection from "../../components/FormSection";
 import Requests from "../../components/requests";
 import CreateUserModal from "../../components/CreateUserModal";
+import GoogleSheetsModal from "../../components/GoogleSheetsModal";
+import OurTeams from "../../components/OurTeams";
 
-import Settings from "./Settings";
+import Settings from "../../components/AdminSettings";
 import { useToast } from "../../components/ToastProvider";
 
 import { FiChevronDown } from "react-icons/fi";
@@ -42,6 +45,7 @@ const AdminDashboard = () => {
   const [notifications] = useState<INotification[]>([]);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
+  const [isGoogleSheetModalOpen, setIsGoogleSheetModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [roleFilter, setRoleFilter] = useState("all");
@@ -53,9 +57,59 @@ const AdminDashboard = () => {
     Settings: "settings",
     Form: "Form",
     Requests: "requests",
+    OurTeams: "teams",
   };
 
   const { activeTab, handleTabChange } = useDashboardSlug(idToSlug, "Overview");
+
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+
+  const filteredUsers = (() => {
+    const admins = users.filter((u) => u.role === "admin");
+    const firstAdmin = admins.sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() -
+        new Date(b.createdAt).getTime(),
+    )[0];
+    const firstAdminId = firstAdmin && firstAdmin._id;
+
+    return users.filter((u) => {
+      if (firstAdminId && u._id === firstAdminId)
+        return false;
+      if (roleFilter !== "all" && u.role !== roleFilter)
+        return false;
+      return true;
+    });
+  })();
+
+  const handleSelectUser = (id: string) => {
+    setSelectedUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUsers.length === filteredUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(filteredUsers.map(u => u._id));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedUsers.length} users? This cannot be undone.`)) return;
+
+    try {
+      setIsLoading(true);
+      await Promise.all(selectedUsers.map(id => api.delete(`/auth/admin/users/${id}`)));
+      showSuccess(`Deleted ${selectedUsers.length} users`);
+      setRefreshTrigger(p => p + 1);
+      setSelectedUsers([]);
+    } catch (error) {
+      showError("Failed to delete users");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -145,6 +199,7 @@ const AdminDashboard = () => {
     { icon: <FiShield />, label: "Management", id: "UserManagement" },
     { icon: <FiLayout />, label: "Role Request Form", id: "Form" },
     { icon: <FiShield />, label: "Requests", id: "Requests" },
+    { icon: <FiUsers />, label: "Our Teams", id: "OurTeams" },
     { icon: <FiSettings />, label: "Settings", id: "Settings" },
   ];
 
@@ -246,11 +301,26 @@ const AdminDashboard = () => {
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                {selectedUsers.length > 0 && (
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-all shadow-sm"
+                  >
+                    <FiTrash2 className="mr-2" /> Delete ({selectedUsers.length})
+                  </button>
+                )}
                 <button
                   onClick={() => setIsCreateUserModalOpen(true)}
                   className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-emerald-500 text-white hover:bg-red-400 transition-all shadow-sm"
                 >
                   Create
+                </button>
+
+                <button
+                  onClick={() => setIsGoogleSheetModalOpen(true)}
+                  className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-all shadow-sm"
+                >
+                  <FiActivity className="mr-2" /> Sheets
                 </button>
 
                 {/*Import CSV Button*/}
@@ -326,47 +396,55 @@ const AdminDashboard = () => {
             <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden mb-8">
               <div className="overflow-x-auto no-scrollbar">
                 <table className="w-full text-left">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold border-b border-gray-100 dark:border-gray-700">
+                    <tr>
+                      <th className="px-4 md:px-6 py-3 w-4">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer align-middle"
+                          checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length}
+                          onChange={handleSelectAll}
+                        />
+                      </th>
+                      <th className="px-4 md:px-6 py-3">User</th>
+                      <th className="hidden md:table-cell px-6 py-3">Email</th>
+                      <th className="px-2 md:px-6 py-3">Role</th>
+                      <th className="hidden sm:table-cell px-6 py-3">Status</th>
+                      <th className="px-4 md:px-6 py-3">Actions</th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {(() => {
-                      const admins = users.filter((u) => u.role === "admin");
-                      const firstAdmin = admins.sort(
-                        (a, b) =>
-                          new Date(a.createdAt).getTime() -
-                          new Date(b.createdAt).getTime(),
-                      )[0];
-                      const firstAdminId = firstAdmin?._id;
-
-                      return users
-                        .filter((u) => {
-                          if (firstAdminId && u._id === firstAdminId)
-                            return false;
-                          if (roleFilter !== "all" && u.role !== roleFilter)
-                            return false;
-                          return true;
-                        })
-                        .map((u) => (
-                          <UserManagementRow
-                            key={u._id}
-                            user={u}
-                            allowedRoles={["admin", "author", "editor", "user"]}
-                            onRoleChange={async (id, role) => {
-                              try {
-                                await api.put(`/auth/admin/users/${id}/role`, {
-                                  role,
-                                });
-                                setUsers((prev) =>
-                                  prev.map((user) =>
-                                    user._id === id ? { ...user, role } : user,
-                                  ),
-                                );
-                                showSuccess("Role updated successfully");
-                              } catch {
-                                showError("Failed to update role");
-                              }
-                            }}
-                          />
-                        ));
-                    })()}
+                    {filteredUsers.map((u) => (
+                      <UserManagementRow
+                        key={u._id}
+                        user={u}
+                        allowedRoles={["admin", "author", "editor", "user"]}
+                        isSelected={selectedUsers.includes(u._id)}
+                        onSelect={handleSelectUser}
+                        onRoleChange={async (id, role) => {
+                          try {
+                            await api.put(`/auth/admin/users/${id}/role`, {
+                              role,
+                            });
+                            setUsers((prev) =>
+                              prev.map((user) =>
+                                user._id === id ? { ...user, role } : user,
+                              ),
+                            );
+                            showSuccess("Role updated successfully");
+                          } catch {
+                            showError("Failed to update role");
+                          }
+                        }}
+                      />
+                    ))}
+                    {filteredUsers.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-400 text-sm">
+                          No users found matching your criteria.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -387,6 +465,10 @@ const AdminDashboard = () => {
               </p>
             </div>
             <Requests />
+          </div>
+        ) : activeTab === "OurTeams" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <OurTeams />
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto no-scrollbar animate-in slide-in-from-bottom-4 duration-500 pr-1 pb-8">
@@ -410,6 +492,12 @@ const AdminDashboard = () => {
         isOpen={isCreateUserModalOpen}
         onClose={() => setIsCreateUserModalOpen(false)}
         onUserCreated={() => setRefreshTrigger((prev) => prev + 1)}
+      />
+
+      <GoogleSheetsModal
+        isOpen={isGoogleSheetModalOpen}
+        onClose={() => setIsGoogleSheetModalOpen(false)}
+        onSyncComplete={() => setRefreshTrigger((prev) => prev + 1)}
       />
     </DashboardLayout>
   );

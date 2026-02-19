@@ -148,6 +148,7 @@ export const createUser = async (req: AuthRequest, res: Response): Promise<void>
       password: hashedPassword,
       role: role || "user", // respect passed role
       isVerified: true, // Auto-verify admin created users
+      createdBy: req.user?.username || req.user?.email || "Admin", // Store creator info
     });
 
     await newUser.save();
@@ -602,6 +603,7 @@ export const getOverview = async (
       role: u.role,
       isVerified: u.isVerified,
       createdAt: u.createdAt,
+      createdBy: u.createdBy
     }));
 
     res.status(200).json({
@@ -650,7 +652,12 @@ export const getAllUsers = async (
       }
     }
 
-    res.status(200).json({ users });
+    const safeUsers = users.map(u => {
+        const userObj =  (u as any).toObject ? (u as any).toObject() : u;
+        return { ...userObj, createdBy: userObj.createdBy }; 
+    });
+
+    res.status(200).json({ users: safeUsers });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch users", error });
   }
@@ -933,5 +940,44 @@ export const rejectRoleRequest = async (req: AuthRequest, res: Response): Promis
         res.status(200).json({ message: "Request rejected" });
     } catch (error) {
         res.status(500).json({ message: "Failed to reject request", error });
+    }
+};
+
+export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        
+        if (!req.userId || req.userRole !== 'admin') {
+             res.status(403).json({ message: "Unauthorized. Admin access required." });
+             return;
+        }
+
+        // Prevent deleting self
+        if (id === req.userId) {
+            res.status(400).json({ message: "You cannot delete your own account." });
+            return;
+        }
+
+        const userToDelete = await User.findById(id);
+        if (!userToDelete) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+        
+        if (userToDelete.isHiddenAdmin) {
+             const requester = await User.findById(req.userId);
+             if (!requester || !(requester as any).isHiddenAdmin) {
+                 res.status(403).json({ message: "You do not have permission to delete this protected admin user." });
+                 return;
+             }
+        }
+
+        await User.findByIdAndDelete(id);
+        
+        await RoleRequest.deleteMany({ userId: id });
+
+        res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to delete user", error });
     }
 };

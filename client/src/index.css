@@ -3,13 +3,12 @@
 @config "../tailwind.config.js";
 
 @theme {
-  --color-primary: #10B981;
+  --color-primary: #10b981;
 }
 
 /* Ensure dark mode works with 'dark' class in Tailwind v4 */
 @variant dark (&:where(.dark, .dark *));
-
-
+@variant brutalist (&:where(.brutalist, .brutalist *));
 
 html,
 body {
@@ -23,12 +22,7 @@ body::-webkit-scrollbar {
 }
 
 body {
-  font-family:
-    "Inter",
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif;
+  font-family: "Inter", Roboto, Helvetica, Arial, sans-serif;
   margin: 0;
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
@@ -36,8 +30,12 @@ body {
 
 /* Mobile Responsive Typography */
 @layer base {
-  h1 { @apply text-2xl md:text-3xl lg:text-4xl; }
-  h2 { @apply text-xl md:text-2xl lg:text-3xl; }
+  h1 {
+    @apply text-2xl md:text-3xl lg:text-4xl;
+  }
+  h2 {
+    @apply text-xl md:text-2xl lg:text-3xl;
+  }
 }
 
 .safe-top {
@@ -47,8 +45,6 @@ body {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
-
-
 
 .animated-bg {
   background: linear-gradient(-45deg, #3b82f6, #06b6d4, #8b5cf6, #10b981);
@@ -81,8 +77,6 @@ body {
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 40px 40px;
 }
-
-
 
 /* Global Scrollbar Styling */
 ::-webkit-scrollbar {
@@ -120,4 +114,299 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
+}
+
+/*******************************************************
+ * NEO-BRUTALIST THEME OVERRIDES
+ *******************************************************/
+html.brutalist body {
+  background-color: #ddd6fe !important; /* violet-100 */
+  background-image: radial-gradient(#000 0.5px, transparent 0.5px);
+  background-size: 10px 10px;
+  color: #000;
+}
+
+html.brutalist * {
+  border-radius: 0 !important;
+}
+
+/* Containers, Cards, Sidebar, Navbar */
+html.brutalist nav,
+html.brutalist header,
+html.brutalist aside,
+html.brutalist .bg-white,
+html.brutalist .bg-gray-800,
+html.brutalist .glass-card,
+html.brutalist .shadow-xl,
+html.brutalist .shadow-2xl {
+  border: 3px solid #000 !important;
+  box-shadow: 6px 6px 0px 0px #000 !important;
+  background-color: #fff !important;
+  backdrop-filter: none !important;
+  color: #000 !important;
+  background-image: none !important;
+}
+
+/* Buttons */
+html.brutalist button,
+html.brutalist .btn {
+  border: 3px solid #000 !important;
+  box-shadow: 4px 4px 0px 0px #000 !important;
+  background-color: #ffde00 !important; /* bright yellow */
+  color: #000 !important;
+  font-weight: 900 !important;
+  text-transform: uppercase;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  transform: translate(0, 0);
+}
+
+html.brutalist button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px 0px #000 !important;
+  background-color: #ff9100 !important; /* orange */
+}
+
+html.brutalist button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px #000 !important;
+}
+
+/* Inputs */
+html.brutalist input,
+html.brutalist textarea,
+html.brutalist select {
+  border: 3px solid #000 !important;
+  background-color: #fff !important;
+  box-shadow: 4px 4px 0px 0px #000 !important;
+  color: #000 !important;
+  font-weight: 700;
+}
+
+html.brutalist input:focus {
+  outline: none;
+  background-color: #a78bfa !important; /* purple-400 */
+  box-shadow: 6px 6px 0px 0px #000 !important;
+}
+
+/* Text Colors */
+html.brutalist h1,
+html.brutalist h2,
+html.brutalist h3,
+html.brutalist p,
+html.brutalist span,
+html.brutalist div {
+  color: #000 !important;
+}
+
+html.brutalist .text-gray-500,
+html.brutalist .text-gray-400,
+html.brutalist .text-gray-600 {
+  color: #333 !important;
+  font-weight: 600 !important;
+}
+
+/* Icons */
+html.brutalist svg {
+  color: #000 !important;
+  stroke-width: 3px !important;
+}
+
+/*******************************************************
+ * MACOS THEME OVERRIDES
+ *******************************************************/
+html.macos body {
+  background: radial-gradient(circle at 50% 50%, #e0e5ec 0%, #f0f4f8 100%) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  color: #1d1d1f !important;
+}
+
+html.macos * {
+  border-radius: 16px !important; /* Standard macOS squircle-ish */
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* Glassmorphism Containers */
+html.macos nav,
+html.macos header,
+html.macos aside,
+html.macos .glass-card,
+html.macos .bg-white,
+html.macos .bg-gray-800,
+html.macos .border-gray-200,
+html.macos .border-gray-700 {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important;
+  color: #1d1d1f !important;
+}
+
+/* Maintain transparency for inputs/buttons inside glass cards if needed, but let's be specific about buttons */
+
+/* Buttons */
+html.macos button:not(.theme-switch),
+html.macos .btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%), #007aff !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  font-weight: 500 !important;
+}
+
+html.macos button:not(.theme-switch):hover {
+  transform: scale(1.02) !important;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3) !important;
+  filter: brightness(1.05);
+}
+
+html.macos button:not(.theme-switch):active {
+  transform: scale(0.98) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Theme Toggle Button Specific Overrides (avoid conflicting with general button style too much) */
+html.macos .theme-toggle-btn {
+   background: rgba(255,255,255,0.5) !important;
+}
+
+/* Inputs */
+html.macos input,
+html.macos textarea,
+html.macos select {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  color: #1d1d1f !important;
+  backdrop-filter: blur(10px);
+}
+
+html.macos input:focus {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: #007aff !important;
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15) !important;
+  outline: none;
+}
+
+/* Text styling */
+html.macos h1, html.macos h2, html.macos h3 {
+  font-weight: 600 !important; /* MacOS uses slightly lighter bold */
+  letter-spacing: -0.01em !important;
+  color: #1d1d1f !important;
+}
+
+html.macos .text-gray-500,
+html.macos .text-gray-400,
+html.macos .text-gray-600,
+html.macos .text-white, /* Override dark mode text white */
+html.macos .dark\:text-white {
+  color: #3a3a3c !important; /* Apple secondary label color */
+}
+
+/* Navbar specific fixes to look like a toolbar */
+html.macos nav {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Icons */
+html.macos svg {
+  stroke-width: 2px !important;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.05));
+  color: #1d1d1f !important; 
+}
+
+/*******************************************************
+ * TERMINAL THEME OVERRIDES
+ *******************************************************/
+html.terminal body {
+    background-color: #0d1117 !important;
+    color: #39d353 !important;
+    font-family: "Fira Code", "Courier New", Courier, monospace !important;
+    background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+}
+
+html.terminal * {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+/* Containers */
+html.terminal nav,
+html.terminal header,
+html.terminal aside,
+html.terminal .glass-card,
+html.terminal .bg-white,
+html.terminal .bg-gray-800 {
+    background-color: #000 !important;
+    border: 1px solid #39d353 !important;
+    color: #39d353 !important;
+}
+
+html.terminal .bg-gray-50, html.terminal .bg-gray-100 {
+    background-color: #0d1117 !important;
+}
+
+/* Buttons */
+html.terminal button:not(.theme-switch),
+html.terminal .btn {
+    background: transparent !important;
+    border: 1px solid #39d353 !important;
+    color: #39d353 !important;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+html.terminal button:not(.theme-switch):hover {
+    background-color: #39d353 !important;
+    color: #000 !important;
+}
+
+/* Inputs */
+html.terminal input,
+html.terminal textarea,
+html.terminal select {
+    background-color: #000 !important;
+    border: 1px solid #39d353 !important;
+    color: #39d353 !important;
+    font-family: monospace;
+}
+
+html.terminal input:focus {
+    outline: none;
+    border-color: #fff !important;
+    box-shadow: 0 0 5px #39d353 !important;
+}
+
+/* Typography */
+html.terminal h1, html.terminal h2, html.terminal h3, html.terminal p, html.terminal span, html.terminal div {
+    color: #39d353 !important;
+}
+
+html.terminal .text-gray-500,
+html.terminal .text-gray-400,
+html.terminal .text-gray-600 {
+    color: #2ea043 !important;
+}
+
+/* Links */
+html.terminal a {
+    text-decoration: underline;
+    color: #58a6ff !important;
+}
+
+/* Icons */
+html.terminal svg {
+    color: #39d353 !important;
+}
+
+/* Terminal Cursor Effect (Simple) */
+html.terminal h1::after {
+    content: '_';
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
 }
