@@ -19,7 +19,6 @@ import Loader from "../../components/Loader";
 import FormSection from "../../components/FormSection";
 import Requests from "../../components/requests";
 import CreateUserModal from "../../components/CreateUserModal";
-import GoogleSheetsModal from "../../components/GoogleSheetsModal";
 
 import OurTeams from "../../components/OurTeams";
 
@@ -51,7 +50,7 @@ const AdminDashboard = () => {
   const [notifications] = useState<INotification[]>([]);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
-  const [isGoogleSheetModalOpen, setIsGoogleSheetModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [roleFilter, setRoleFilter] = useState("all");
@@ -333,23 +332,9 @@ const AdminDashboard = () => {
                   Create
                 </button>
 
-                <button
-                  onClick={() => setIsGoogleSheetModalOpen(true)}
-                  className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-all shadow-sm"
-                >
-                  <FiActivity className="mr-2" /> Sheets
-                </button>
-
                 {/*Import CSV Button*/}
-                <input type="file" id="csvInput" accept=".csv" className="hidden" onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    console.log("Selected file:", file);
-                    // parshing the csv here
-                  }
-                }} />
                 <button
-                  onClick={() => document.getElementById("csvInput")?.click()}
+                  onClick={() => setIsImportModalOpen(true)}
                   className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-gray-500 text-white hover:bg-emerald-400 transition-all shadow-sm"
                 >
                   Import CSV
@@ -358,7 +343,7 @@ const AdminDashboard = () => {
                 {/*Export CSV Button*/}
                 <button
                   onClick={() => {
-                    const csvContent = "data:text/csv;charset=utf-8," + ["Name,Email,Role"].concat(users.map((u) => `${u.name || ''},${u.email},${u.role}`)).join("\n");
+                    const csvContent = "data:text/csv;charset=utf-8," + ["ID, Name, Username, Email,Role, Verified, Created At, Last Login, Created By"].concat(users.map((u) => `${u.id || ''},${u.name || ''},${u.username || ''},${u.email || ''},${u.role || ''},${u.isVerified || ''},${u.createdAt || ''},${u.lastLogin || ''},${u.createdBy || ''}`)).join("\n");
                     const encodedUri = encodeURI(csvContent);
                     const link = document.createElement("a");
                     link.setAttribute("href", encodedUri);
@@ -540,11 +525,54 @@ const AdminDashboard = () => {
         onUserCreated={() => setRefreshTrigger((prev) => prev + 1)}
       />
 
-      <GoogleSheetsModal
-        isOpen={isGoogleSheetModalOpen}
-        onClose={() => setIsGoogleSheetModalOpen(false)}
-        onSyncComplete={() => setRefreshTrigger((prev) => prev + 1)}
-      />
+      {isImportModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setIsImportModalOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold dark:text-white border-b border-gray-100 dark:border-gray-700 pb-4">
+              Import Users via CSV
+            </h2>
+            <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
+              <p>Your CSV file should contain the following headings:</p>
+              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl font-mono text-xs overflow-x-auto break-words leading-relaxed text-indigo-600 dark:text-indigo-400">
+                ID, Name, Username, Email, Role, Verified, Created At, Last Login, Created By
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Please make sure the columns match exactly to avoid any import errors.
+              </p>
+            </div>
+
+            <input type="file" id="csvInputModal" accept=".csv" className="hidden" onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                console.log("Selected file:", file);
+                // parshing the csv here
+                setIsImportModalOpen(false);
+              }
+            }} />
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setIsImportModalOpen(false)}
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => document.getElementById("csvInputModal")?.click()}
+                className="flex-1 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-sm transition-all"
+              >
+                Select File to Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

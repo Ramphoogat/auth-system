@@ -9,7 +9,11 @@ import {
   FiChevronDown,
   FiFileText,
   FiSettings,
+  FiCalendar,
 } from "react-icons/fi";
+import { BsFillKanbanFill } from "react-icons/bs";
+import Kanban from "../../components/Kanban";
+import Calendar from "../../components/Calendar";
 import api from "../../api/axios";
 import { AxiosError } from "axios";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -37,7 +41,7 @@ const EditorDashboard = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [statsData, setStatsData] = useState<IAdminStats | null>(null);
   const [notifications, setNotifications] = useState<INotification[]>([]);
-  const idToSlug = { Overview: "overview", Management: "management", RoleChange: "RoleChange", Requests: "requests", Settings: "settings" };
+  const idToSlug = { Overview: "overview", Management: "management", RoleChange: "RoleChange", Requests: "requests", Calendar: "calendar", Kanban: "kanban", Settings: "settings" };
   const { activeTab, handleTabChange } = useDashboardSlug(idToSlug, "Overview");
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -128,6 +132,8 @@ const EditorDashboard = () => {
     { icon: <FiShield />, label: "Management", id: "Management" },
     { icon: <FiFileText />, label: "Role Request", id: "RoleChange" },
     { icon: <FiFileText />, label: "Requests", id: "Requests" },
+    { icon: <FiCalendar />, label: "Calendar", id: "Calendar" },
+    { icon: <BsFillKanbanFill />, label: "Kanban", id: "Kanban" },
     { icon: <FiSettings />, label: "Settings", id: "Settings" },
   ];
 
@@ -204,6 +210,14 @@ const EditorDashboard = () => {
               <p className="text-xs md:text-sm text-gray-500">Review pending role change applications.</p>
             </div>
             <Requests />
+          </div>
+        ) : activeTab === "Calendar" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <Calendar />
+          </div>
+        ) : activeTab === "Kanban" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <Kanban />
           </div>
         ) : activeTab === "Settings" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">

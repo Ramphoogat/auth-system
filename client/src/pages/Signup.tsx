@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import LightRays from "../components/LightRays";
 import ThemeComponent from "../components/ThemeComponent";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { FaFacebook, FaGoogle, FaTwitter } from "react-icons/fa";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -76,13 +75,25 @@ const Signup = () => {
       {/* Back to Home Button */}
       <div className="fixed top-6 left-6 z-20">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
           className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white rounded-xl transition-all duration-300 group shadow-lg"
         >
-          <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg
+            className="w-4 h-4 group-hover:-translate-x-1 transition-transform"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
           </svg>
-          <span className="text-xs font-bold uppercase tracking-wider">Back to Home</span>
+          <span className="text-xs font-bold uppercase tracking-wider">
+            Back to Home
+          </span>
         </button>
       </div>
 
@@ -107,7 +118,9 @@ const Signup = () => {
       <div className="w-full max-w-md px-4 z-10 mx-auto my-auto">
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 shadow-2xl rounded-[32px] p-6 sm:p-8 md:p-10 transition-all duration-500 relative">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Signup</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Signup
+            </h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
               Create your account to get started
             </p>
@@ -251,30 +264,6 @@ const Signup = () => {
                 "Sign Up"
               )}
             </button>
-
-            <div className="grid grid-cols-3 gap-4">
-                            <button
-                              type="button"
-                              className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
-                              title="Google"
-                            >
-                              <FaGoogle className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-red-500 transition-colors" />
-                            </button>
-                            <button
-                              type="button"
-                              className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
-                              title="Facebook"
-                            >
-                              <FaFacebook className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 transition-colors" />
-                            </button>
-                            <button
-                              type="button"
-                              className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
-                              title="Twitter"
-                            >
-                              <FaTwitter className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-sky-500 transition-colors" />
-                            </button>
-                          </div>
           </form>
 
           <div className="mt-8 text-center">

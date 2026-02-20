@@ -40,6 +40,9 @@ export type CalendarEvent = {
     end: Date;
     title: string;
     color?: VariantProps<typeof monthEventVariants>['variant'];
+    description?: string;
+    tags?: string[];
+    creator?: string;
 };
 
 type ContextType = {
@@ -54,6 +57,10 @@ type ContextType = {
     onEventClick?: (event: CalendarEvent) => void;
     enableHotkeys?: boolean;
     today: Date;
+    isEventModalOpen: boolean;
+    setIsEventModalOpen: (open: boolean) => void;
+    selectedDateForEvent: Date | null;
+    setSelectedDateForEvent: (date: Date | null) => void;
 };
 
 export const Context = createContext<ContextType>({} as ContextType);

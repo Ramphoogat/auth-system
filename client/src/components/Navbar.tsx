@@ -1,4 +1,5 @@
 import { FiMenu, FiBell, FiSearch } from "react-icons/fi";
+import { useState, useEffect } from "react";
 import ThemeComponent from "./ThemeComponent";
 import DashboardSwitcher from "./DashboardSwitcher";
 import NotificationCenter from "./NotificationCenter";
@@ -9,6 +10,23 @@ interface NavbarProps {
     showNotifications: boolean;
     setShowNotifications: (isOpen: boolean) => void;
 }
+
+const LiveClock = () => {
+    const [time, setTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <div className="hidden lg:flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800/50 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
+            {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        </div>
+    );
+};
 
 const Navbar: React.FC<NavbarProps> = ({
     setIsMobileMenuOpen,
@@ -39,8 +57,11 @@ const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             <div className="flex items-center space-x-1 md:space-x-3 lg:space-x-6">
-                <div className="block">
-                    <DashboardSwitcher />
+                <div className="flex items-center gap-3">
+                    <LiveClock />
+                    <div className="block">
+                        <DashboardSwitcher />
+                    </div>
                 </div>
                 <div className="scale-90 sm:scale-100">
                     <ThemeComponent />

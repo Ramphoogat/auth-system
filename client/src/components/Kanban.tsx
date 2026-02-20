@@ -698,17 +698,17 @@ const Kanban: React.FC = () => {
             />
 
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+                <div className="w-full md:w-auto text-center md:text-left">
+                    <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                         Project Kanban
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Manage tasks and track progress. Right-click cards to move them.</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm mt-1">Manage tasks and track progress. Right-click cards to move them.</p>
                 </div>
-                <div className="flex space-x-3">
+                <div className="flex w-full md:w-auto space-x-3 justify-center md:justify-end">
                     <button
                         onClick={() => setIsColumnModalOpen(true)}
-                        className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-500/30 transition-all active:scale-95 font-medium text-sm"
+                        className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-500/30 transition-all active:scale-95 font-medium text-sm w-full md:w-auto justify-center"
                     >
                         <FiPlus className="mr-2" /> Add Column
                     </button>
@@ -718,7 +718,7 @@ const Kanban: React.FC = () => {
             {/* Left Button - Full Height Transparent Area */}
             <button
                 onClick={() => scroll('left')}
-                className="absolute left-0 top-0 screen-full w-16 z-30 group/left opacity-20 hover:opacity-100 transition-opacity duration-300"
+                className="absolute left-0 top-0 screen-full w-16 z-30 group/left opacity-50 hover:opacity-100 transition-opacity duration-300"
                 aria-label="Scroll Left"
             >
                 {/* Visible Button */}
@@ -730,7 +730,7 @@ const Kanban: React.FC = () => {
             {/* Right Button - Full Height Transparent Area */}
             <button
                 onClick={() => scroll('right')}
-                className="absolute right-0 top-0 screen-full w-16 z-30 group/right opacity-20 hover:opacity-100 transition-opacity duration-300"
+                className="absolute right-0 top-0 screen-full w-16 z-30 group/right opacity-50 hover:opacity-100 transition-opacity duration-300"
                 aria-label="Scroll Right"
             >
                 {/* Visible Button */}

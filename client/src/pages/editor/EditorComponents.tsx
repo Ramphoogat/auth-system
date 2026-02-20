@@ -1,6 +1,7 @@
 import React from 'react';
 
 export interface IUser {
+  id: string;
   _id: string;
   name?: string;
   username: string;
@@ -8,6 +9,9 @@ export interface IUser {
   role: string;
   isVerified: boolean;
   createdAt: string;
+  lastLogin?: string;
+  lastLogout?: string;
+  createdBy?: string;
 }
 
 export interface IAdminStats {
@@ -68,11 +72,10 @@ export const SidebarItem = ({
 }: SidebarItemProps) => (
   <div
     onClick={onClick}
-    className={`flex items-center ${isOpen ? "px-4" : "justify-center"} py-3 rounded-xl cursor-pointer transition-all duration-200 group ${
-      active
+    className={`flex items-center ${isOpen ? "px-4" : "justify-center"} py-3 rounded-xl cursor-pointer transition-all duration-200 group ${active
         ? "bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-gray-200 dark:border-gray-700"
         : "hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-    }`}
+      }`}
   >
     <div className={`${isOpen ? "mr-3" : ""} text-lg`}>{icon}</div>
     {isOpen && <span className="font-medium text-sm font-semibold">{label}</span>}
@@ -118,13 +121,12 @@ export const ReaderCard = ({ client }: ReaderCardProps) => (
         {client.email}
       </p>
       <span
-        className={`px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider border ${
-          client.role === "author"
+        className={`px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider border ${client.role === "author"
             ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30"
             : client.role === "editor"
               ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-500/30"
               : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600"
-        }`}
+          }`}
       >
         {client.role}
       </span>
@@ -135,11 +137,10 @@ export const ReaderCard = ({ client }: ReaderCardProps) => (
 export const AppearanceCard = ({ bg, currentBg, handleBgChange }: AppearanceCardProps) => (
   <div
     onClick={() => handleBgChange(bg.image)}
-    className={`group relative h-48 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all duration-500 ${
-      currentBg === bg.image
+    className={`group relative h-48 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all duration-500 ${currentBg === bg.image
         ? "border-emerald-500 ring-[6px] ring-emerald-500/20 scale-[1.02]"
         : "border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:scale-[1.01]"
-    }`}
+      }`}
   >
     <img
       src={bg.image}

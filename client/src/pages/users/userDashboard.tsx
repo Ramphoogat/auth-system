@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiUsers, FiActivity, FiLayout, FiCheckCircle, FiFileText, FiSettings } from "react-icons/fi";
+import { FiUsers, FiActivity, FiLayout, FiCheckCircle, FiFileText, FiSettings, FiCalendar } from "react-icons/fi";
+import { BsFillKanbanFill } from "react-icons/bs";
+import Kanban from "../../components/Kanban";
+import Calendar from "../../components/Calendar";
 import api from "../../api/axios";
 import { AxiosError } from "axios";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -26,6 +29,8 @@ const UserDashboard = () => {
     Overview: "Overview",
     UserManagement: "UserManagement",
     RoleChange: "RoleChange",
+    Calendar: "calendar",
+    Kanban: "kanban",
     Settings: "settings",
   };
   const { activeTab, handleTabChange } = useDashboardSlug(idToSlug, "Overview");
@@ -109,6 +114,8 @@ const UserDashboard = () => {
     { icon: <FiLayout />, label: "Overview", id: "Overview" },
     { icon: <FiUsers />, label: "Management", id: "UserManagement" },
     { icon: <FiFileText />, label: "Role Request", id: "RoleChange" },
+    { icon: <FiCalendar />, label: "Calendar", id: "Calendar" },
+    { icon: <BsFillKanbanFill />, label: "Kanban", id: "Kanban" },
     { icon: <FiSettings />, label: "Settings", id: "Settings" },
   ];
 
@@ -207,6 +214,14 @@ const UserDashboard = () => {
         ) : activeTab === "RoleChange" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar">
             <FormSection />
+          </div>
+        ) : activeTab === "Calendar" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <Calendar />
+          </div>
+        ) : activeTab === "Kanban" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <Kanban />
           </div>
         ) : activeTab === "Settings" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">

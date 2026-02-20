@@ -1,6 +1,7 @@
 import React from 'react';
 
 export interface IUser {
+  id: string;
   _id: string;
   name?: string;
   username: string;
@@ -8,6 +9,9 @@ export interface IUser {
   role: string;
   isVerified: boolean;
   createdAt: string;
+  lastLogin?: string;
+  lastLogout?: string;
+  createdBy?: string;
 }
 
 export interface INotification {
@@ -51,11 +55,10 @@ export const SidebarItem = ({
 }: SidebarItemProps) => (
   <div
     onClick={onClick}
-    className={`flex items-center ${isOpen ? "px-4" : "justify-center"} py-3 rounded-xl cursor-pointer transition-all duration-200 group ${
-      active
+    className={`flex items-center ${isOpen ? "px-4" : "justify-center"} py-3 rounded-xl cursor-pointer transition-all duration-200 group ${active
         ? "bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-gray-200 dark:border-gray-700"
         : "hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-    }`}
+      }`}
   >
     <div className={`${isOpen ? "mr-3" : ""} text-lg`}>{icon}</div>
     {isOpen && <span className="font-medium">{label}</span>}
@@ -76,7 +79,7 @@ export const StatCard = ({ icon, title, value, change }: StatCardProps) => (
       </span>
     </div>
     <div className="relative z-10">
-       <h3 className="text-gray-400 dark:text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">
+      <h3 className="text-gray-400 dark:text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">
         {title}
       </h3>
       <p className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white tracking-tight">

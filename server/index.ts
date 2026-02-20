@@ -8,6 +8,7 @@ import cors from "cors";
 import authRoutes from "./src/routes/authRoutes.js";
 import settingsRoutes from "./src/routes/settings.js";
 import sheetRoutes from "./src/routes/sheetRoutes.js";
+import { performSheetSync } from "./src/controllers/sheetController.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -75,6 +76,13 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     connectDB().then(() => {
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
+            
+            // Start Google Sheets Background Auto-Sync (Runs every 5 seconds)
+            setInterval(() => {
+                performSheetSync().catch(err => {
+                    console.error("Background Auto Sync Error:", err.message || err);
+                });
+            }, 5000);
         });
     });
 }
