@@ -114,10 +114,10 @@ const SidebarComponent: React.FC<SidebarComponentProps> = ({
                 {/* Floating Toggle Button */}
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    className={`absolute -right-4 top-8 w-8 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.15)] z-[60] text-gray-400 hover:text-emerald-500 transition-all duration-300 group`}
+                    className={`absolute -right-3 top-8 w-8 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.15)] z-[60] text-gray-400 hover:text-emerald-500 transition-all duration-300 group`}
                 >
                     <FiChevronLeft
-                        className={`w-5 h-5 transition-transform duration-500 ${!isSidebarOpen && "rotate-180"}`}
+                        className={`w-10 h-7 transition-transform duration-500 ${!isSidebarOpen && "rotate-180"}`}
                     />
 
                 </button>

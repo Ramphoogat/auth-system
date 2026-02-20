@@ -73,6 +73,93 @@ export const connectSheet = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
+// Reusable sync function
+export const performSheetSync = async (): Promise<void> => {
+    const settings = await SystemSettings.findOne();
+    if (!settings || !settings.googleSheetId) {
+        // No sheet connected, skip
+        return;
+    }
+
+    const sheets = getSheetsClient();
+    const users = await User.find().sort({ createdAt: -1 });
+
+    const header = ["ID", "Name", "Username", "Email", "Role", "Verified", "Created At", "Last Login", "Created By"];
+    
+    // Helper to sanitize strings for sheets (prevent formula injection)
+const sanitize = (val: any) => {
+        if (val === null || val === undefined) return "";
+        const str = String(val);
+        if (['=', '+', '-', '@'].some(char => str.startsWith(char))) {
+             return "'" + str;
+        }
+        return str;
+    };
+
+    const rows = users.map(u => {
+        try {
+            return [
+                u._id.toString(),
+                sanitize(u.name),
+                sanitize(u.username),
+                u.email || "",
+                u.role || "user",
+                u.isVerified ? "Yes" : "No",
+                u.createdAt ? new Date(u.createdAt).toISOString() : "",
+                u.lastLogin ? new Date(u.lastLogin).toISOString() : "",
+                u.createdBy || "Admin"
+            ];
+        } catch (rowError) {
+            console.error("Error processing user row:", u._id, rowError);
+            return [u._id.toString(), "ERROR", "ERROR", "", "", "", "", "", ""];
+        }
+    });
+
+    const values = [header, ...rows];
+
+    let sheetName = "Users";
+    try {
+        const spreadsheet = await sheets.spreadsheets.get({
+            spreadsheetId: settings.googleSheetId
+        });
+        if (spreadsheet.data.sheets && spreadsheet.data.sheets.length > 0) {
+            sheetName = spreadsheet.data.sheets[0].properties?.title || "Users";
+        }
+    } catch (metaError) {
+        console.warn("Could not fetch sheet metadata, defaulting to 'Users'", metaError);
+    }
+
+    // Wrap sheet name in single quotes if it contains spaces or special characters
+    const rangeName = `'${sheetName.replace(/'/g, "''")}'!A1`;
+
+    // Clear existing content first to avoid duplicates/leftover rows
+    const clearRange = `'${sheetName.replace(/'/g, "''")}'!A:Z`;
+    try {
+        await sheets.spreadsheets.values.clear({
+            spreadsheetId: settings.googleSheetId,
+            range: clearRange,
+        });
+    } catch (clearError) {
+        console.warn("Could not clear sheet properly before update", clearError);
+    }
+
+    // Update with new data
+    try {
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: settings.googleSheetId,
+            range: rangeName,
+            valueInputOption: "RAW",
+            requestBody: { values }
+        });
+    } catch (googleError: any) {
+        console.error("Google Sheets API Update Error:", googleError.response?.data || googleError);
+        throw new Error(googleError.response?.data?.error?.message || "Failed to update Google Sheet");
+    }
+
+    settings.lastSync = new Date();
+    await settings.save();
+};
+
 export const syncToSheet = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         if (!req.userId || req.userRole !== 'admin') {
@@ -86,136 +173,31 @@ export const syncToSheet = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        const sheets = getSheetsClient();
-        const users = await User.find().sort({ createdAt: -1 });
+        await performSheetSync();
 
-        const header = ["ID", "Name", "Username", "Email", "Role", "Verified", "Created At", "Last Login", "Created By"];
-        const rows = users.map(u => [
-            u._id.toString(),
-            u.name || "",
-            u.username,
-            u.email,
-            u.role,
-            u.isVerified ? "Yes" : "No",
-            u.createdAt ? new Date(u.createdAt).toISOString() : "",
-            u.lastLogin ? new Date(u.lastLogin).toISOString() : "",
-            u.createdBy || "Admin"
-        ]);
-
-        const values = [header, ...rows];
-
-        // Clear existing and update
-        await sheets.spreadsheets.values.update({
-            spreadsheetId: settings.googleSheetId,
-            range: "Sheet1!A1",
-            valueInputOption: "RAW",
-            requestBody: { values }
-        });
-
-        settings.lastSync = new Date();
-        await settings.save();
-
-        res.status(200).json({ message: `Synced ${users.length} users to Google Sheet` });
+        // Get count for response message
+        const count = await User.countDocuments();
+        res.status(200).json({ message: `Synced ${count} users to Google Sheet` });
     } catch (error: any) {
-        console.error("Sync To Sheet Error:", error);
-        res.status(500).json({ message: error.message || "Internal Server Error" });
+        console.error("Sync To Sheet Error Details:", error);
+        res.status(500).json({ 
+            message: error.message || "Internal Server Error",
+            details: error.response?.data || error.toString()
+        });
     }
 };
 
-export const importFromSheet = async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-         if (!req.userId || req.userRole !== 'admin') {
-            res.status(403).json({ message: "Admin access required" });
-            return;
-        }
-        
-        const settings = await SystemSettings.findOne();
-        if (!settings || !settings.googleSheetId) {
-            res.status(400).json({ message: "No Google Sheet connected" });
-            return;
-        }
-
-        const sheets = getSheetsClient();
-        
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: settings.googleSheetId,
-            range: "Sheet1!A2:I", // Skip header
-        });
-
-        const rows = response.data.values;
-        if (!rows || rows.length === 0) {
-            res.status(200).json({ message: "No data found in sheet to import" });
-            return;
-        }
-
-        let updatedCount = 0;
-        let createdCount = 0; // In a real app we might create users, but passwords are tricky. 
-                              // For now, let's just update roles/names based on email match.
-
-        for (const row of rows) {
-            // format: ID, Name, Username, Email, Role, Verified...
-            const [id, name, username, email, role] = row;
-            
-            if (!email) continue;
-
-            // Try to find by ID first if present, else Email
-            let user = null;
-            if (id && id.length === 24) { // naive ObjectId check
-                 user = await User.findById(id);
-            }
-            
-            if (!user) {
-                user = await User.findOne({ email: email.toLowerCase().trim() });
-            }
-
-            if (user) {
-                // Update
-                let changed = false;
-                if (role && ["user", "admin", "editor", "author"].includes(role) && user.role !== role) {
-                    // prevent demoting self or modifying hidden admin logic (simplified here)
-                    if (user._id.toString() !== req.userId && !user.isHiddenAdmin) {
-                        user.role = role;
-                        changed = true;
-                    }
-                }
-                if (name && user.name !== name) {
-                    user.name = name;
-                    changed = true;
-                }
-                
-                if (changed) {
-                    await user.save();
-                    updatedCount++;
-                }
-            } else {
-                // Determine if we should create users. Without password it's hard.
-                // We'll skip creation for now to be safe, or generating a random password and emailing it?
-                // The prompt was "connect", implying sync. Usually import updates existing.
-                // Let's stick to update for now.
-                console.log(`Skipping creation for ${email} (Password required)`);
-            }
-        }
-        
-        settings.lastSync = new Date();
-        await settings.save();
-
-        res.status(200).json({ message: `Import complete. Updated ${updatedCount} users.` });
-
-    } catch (error: any) {
-        console.error("Import From Sheet Error:", error);
-        res.status(500).json({ message: error.message || "Internal Server Error" });
-    }
-};
 
 export const getSheetStatus = async (req: AuthRequest, res: Response): Promise<void> => {
-     try {
-         const settings = await SystemSettings.findOne();
-         res.status(200).json({ 
-             connected: !!settings?.googleSheetId, 
-             sheetId: settings?.googleSheetId,
-             lastSync: settings?.lastSync 
-         });
-     } catch (error: any) {
-         res.status(500).json({ message: error.message });
-     }
-}
+    try {
+        const settings = await SystemSettings.findOne();
+        res.status(200).json({ 
+            connected: !!settings?.googleSheetId, 
+            sheetId: settings?.googleSheetId,
+            lastSync: settings?.lastSync 
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+

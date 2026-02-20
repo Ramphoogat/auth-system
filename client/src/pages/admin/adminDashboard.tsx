@@ -7,6 +7,8 @@ import {
   FiShield,
   FiLayout,
   FiTrash2,
+  FiMinimize2,
+  FiCalendar,
 } from "react-icons/fi";
 
 import api from "../../api/axios";
@@ -18,9 +20,12 @@ import FormSection from "../../components/FormSection";
 import Requests from "../../components/requests";
 import CreateUserModal from "../../components/CreateUserModal";
 import GoogleSheetsModal from "../../components/GoogleSheetsModal";
+
 import OurTeams from "../../components/OurTeams";
 
 import Settings from "../../components/AdminSettings";
+import Kanban from "../../components/Kanban";
+import Calendar from "../../components/Calendar";
 import { useToast } from "../../components/ToastProvider";
 
 import { FiChevronDown } from "react-icons/fi";
@@ -31,6 +36,7 @@ import {
   type IAdminStats,
   type INotification,
 } from "./AdminComponents";
+import { BsFillKanbanFill } from "react-icons/bs";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -57,12 +63,28 @@ const AdminDashboard = () => {
     Settings: "settings",
     Form: "Form",
     Requests: "requests",
+    Calendar: "calendar",
+    Kanban: "kanban",
     OurTeams: "teams",
   };
 
   const { activeTab, handleTabChange } = useDashboardSlug(idToSlug, "Overview");
 
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [expandedUserIds, setExpandedUserIds] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (id: string) => {
+    setExpandedUserIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const collapseAll = () => {
+    setExpandedUserIds(new Set());
+  };
 
   const filteredUsers = (() => {
     const admins = users.filter((u) => u.role === "admin");
@@ -199,6 +221,8 @@ const AdminDashboard = () => {
     { icon: <FiShield />, label: "Management", id: "UserManagement" },
     { icon: <FiLayout />, label: "Role Request Form", id: "Form" },
     { icon: <FiShield />, label: "Requests", id: "Requests" },
+    { icon: <FiCalendar />, label: "Calendar", id: "Calendar" },
+    { icon: <BsFillKanbanFill />, label: "Kanban", id: "Kanban" },
     { icon: <FiUsers />, label: "Our Teams", id: "OurTeams" },
     { icon: <FiSettings />, label: "Settings", id: "Settings" },
   ];
@@ -301,14 +325,7 @@ const AdminDashboard = () => {
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {selectedUsers.length > 0 && (
-                  <button
-                    onClick={handleDeleteSelected}
-                    className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-all shadow-sm"
-                  >
-                    <FiTrash2 className="mr-2" /> Delete ({selectedUsers.length})
-                  </button>
-                )}
+
                 <button
                   onClick={() => setIsCreateUserModalOpen(true)}
                   className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-emerald-500 text-white hover:bg-red-400 transition-all shadow-sm"
@@ -354,7 +371,22 @@ const AdminDashboard = () => {
                 >
                   Export CSV
                 </button>
-
+                {/*Collapse All Button*/}
+                <button
+                  onClick={collapseAll}
+                  className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/30 transition-all shadow-sm"
+                  title="Collapse All Expanded Rows"
+                >
+                  <FiMinimize2 className="mr-2" /> Collapse All
+                </button>
+                {selectedUsers.length > 0 && (
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-all shadow-sm"
+                  >
+                    <FiTrash2 className="mr-2" /> Delete ({selectedUsers.length})
+                  </button>
+                )}
                 <div className="relative">
                   <button
                     onClick={() => setIsRoleDropDownOpen(!isRoleDropDownOpen)}
@@ -421,6 +453,8 @@ const AdminDashboard = () => {
                         allowedRoles={["admin", "author", "editor", "user"]}
                         isSelected={selectedUsers.includes(u._id)}
                         onSelect={handleSelectUser}
+                        isExpanded={expandedUserIds.has(u._id)}
+                        onToggleExpand={() => toggleExpand(u._id)}
                         onRoleChange={async (id, role) => {
                           try {
                             await api.put(`/auth/admin/users/${id}/role`, {
@@ -466,7 +500,19 @@ const AdminDashboard = () => {
             </div>
             <Requests />
           </div>
+
+
+        ) : activeTab === "Calendar" ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <Calendar />
+          </div>
+        ) : activeTab === "Kanban" ? (
+
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <Kanban />
+          </div>
         ) : activeTab === "OurTeams" ? (
+
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
             <OurTeams />
           </div>

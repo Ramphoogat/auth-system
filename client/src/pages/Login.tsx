@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../api/axios";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,48 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
+
+  // Social Login Callback Handler
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const token = queryParams.get("token");
+    const role = queryParams.get("role");
+    const error = queryParams.get("error");
+
+    if (token) {
+      if (rememberMe) { 
+        localStorage.setItem("token", token);
+        if (role) localStorage.setItem("role", role);
+        localStorage.setItem("last_user", "Social User"); // Placeholder
+      } else {
+        // Default to localStorage for social auth to prevent session loss on tab close immediately if users expect persistence
+        localStorage.setItem("token", token);
+        if (role) localStorage.setItem("role", role);
+        localStorage.setItem("last_user", "Social User");
+      }
+
+      showSuccess("Logged in via Social Media!");
+      addNotification({
+        title: "Login Successful",
+        message: "Welcome back!",
+        type: "success",
+      });
+
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      navigate("/dashboard");
+    }
+
+    if (error) {
+      alert(error);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [navigate, showSuccess, addNotification, rememberMe]);
+
+  const handleSocialLogin = (provider: string) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    window.location.href = `${API_URL}/auth/${provider}`;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,21 +353,24 @@ const Login = () => {
               <div className="grid grid-cols-3 gap-4">
                 <button
                   type="button"
-                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
+                  onClick={() => handleSocialLogin("google")}
+                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group cursor-pointer"
                   title="Google"
                 >
                   <FaGoogle className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-red-500 transition-colors" />
                 </button>
                 <button
                   type="button"
-                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
+                  onClick={() => handleSocialLogin("facebook")}
+                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group cursor-pointer"
                   title="Facebook"
                 >
                   <FaFacebook className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 transition-colors" />
                 </button>
                 <button
                   type="button"
-                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
+                  onClick={() => handleSocialLogin("twitter")}
+                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group cursor-pointer"
                   title="Twitter"
                 >
                   <FaTwitter className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-sky-500 transition-colors" />

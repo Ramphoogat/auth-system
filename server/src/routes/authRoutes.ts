@@ -22,6 +22,14 @@ import {
   deleteUser,
 } from "../controllers/authController.js";
 import {
+  googleAuth,
+  googleCallback,
+  facebookAuth,
+  facebookCallback,
+  twitterAuth,
+  twitterCallback,
+} from "../controllers/socialAuthController.js";
+import {
   authToken,
   authAdmin,
   authAuthor,
@@ -38,6 +46,14 @@ router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 router.get("/profile", authToken, getProfile);
 router.put("/profile", authToken, updateProfile);
+
+// Social Login Routes
+router.get("/google", googleAuth);
+router.get("/google/callback", googleCallback);
+router.get("/facebook", facebookAuth);
+router.get("/facebook/callback", facebookCallback);
+router.get("/twitter", twitterAuth);
+router.get("/twitter/callback", twitterCallback);
 
 // Admin Routes (Hierarchical Access)
 router.get("/admin/stats", authToken, authAuthor, getAdminStats); // Admin & Author

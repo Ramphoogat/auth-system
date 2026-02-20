@@ -6,6 +6,7 @@ import User, { IUser } from "../models/Users.js";
 import { sendOTP, sendResetLink } from "../utils/emailService.js";
 import { AuthRequest } from "../middleware/auth.js";
 import crypto from "crypto";
+import { performSheetSync } from "./sheetController.js";
 
 // Generate 6-digit OTP for email verification and 2FA
 const generateOTP = () =>
@@ -153,6 +154,15 @@ export const createUser = async (req: AuthRequest, res: Response): Promise<void>
 
     await newUser.save();
     console.log(`Admin ${req.userId} created new user: ${newUser.email} (${newUser.role})`);
+
+    // Sync to Google Sheet if connected (non-blocking / or blocking is fine, let's await to ensure it runs but catch error)
+    try {
+        await performSheetSync();
+        console.log("Auto-synced to Google Sheet");
+    } catch (syncError) {
+        console.error("Auto-sync failed:", syncError);
+        // Don't fail the request, just log
+    }
 
     res.status(201).json({
       message: "User created successfully",
@@ -640,6 +650,7 @@ export const getAllUsers = async (
         (!!(requester as IUser).isHiddenAdmin ||
           (oldestAdmin &&
             String(requester._id) === String(oldestAdmin._id)));
+
       if (requester && !isRequesterHiddenAdmin && oldestAdmin) {
         const hiddenAdminId = String(oldestAdmin._id);
         users = users.filter((u) => {
@@ -652,9 +663,36 @@ export const getAllUsers = async (
       }
     }
 
+    // Collect creators to fetch their roles
+    const creatorIdentifiers = [...new Set(users.map(u => u.createdBy).filter(c => c && c !== "Admin"))];
+    
+    let roleMap = new Map<string, string>();
+    if (creatorIdentifiers.length > 0) {
+        const creators = await User.find({
+            $or: [
+                { email: { $in: creatorIdentifiers } },
+                { username: { $in: creatorIdentifiers } }
+            ]
+        }).select("email username role");
+
+        creators.forEach((c: any) => {
+            if (c.email) roleMap.set(c.email, c.role);
+            if (c.username) roleMap.set(c.username, c.role);
+        });
+    }
+
     const safeUsers = users.map(u => {
         const userObj =  (u as any).toObject ? (u as any).toObject() : u;
-        return { ...userObj, createdBy: userObj.createdBy }; 
+        let creatorDisplay = "Admin";
+        
+        if (userObj.createdBy && userObj.createdBy !== "Admin") {
+            // Try to find role, otherwise fall back to original identifier (e.g. if user deleted)
+            creatorDisplay = roleMap.get(userObj.createdBy) || `${userObj.createdBy} (Deleted)`;
+        } else if (userObj.createdBy === "Admin") {
+            creatorDisplay = "Admin";
+        }
+
+        return { ...userObj, createdBy: creatorDisplay }; 
     });
 
     res.status(200).json({ users: safeUsers });
@@ -809,6 +847,8 @@ export const updateUserRole = async (
 
     userDoc.role = newRole;
     await userDoc.save();
+
+    try { await performSheetSync(); } catch (e) { console.error("Sync failed", e); }
 
     res.status(200).json({ message: "Role updated successfully", user: userDoc });
   } catch (error) {
@@ -975,6 +1015,14 @@ export const deleteUser = async (req: AuthRequest, res: Response): Promise<void>
         await User.findByIdAndDelete(id);
         
         await RoleRequest.deleteMany({ userId: id });
+        
+        console.log(`User ${id} deleted. Syncing with Google Sheets...`);
+        try { 
+            await performSheetSync(); 
+            console.log("Sync after delete successful.");
+        } catch (e) { 
+            console.error("Sync failed after delete", e); 
+        }
 
         res.status(200).json({ message: "User deleted successfully" });
     } catch (error) {

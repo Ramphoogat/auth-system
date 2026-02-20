@@ -5,6 +5,9 @@ export interface IUser extends Document {
   email: string;
   username: string;
   password?: string;
+  googleId?: string;
+  facebookId?: string;
+  twitterId?: string;
   otp?: string;
   otpExpires?: Date;
   isVerified: boolean;
@@ -39,7 +42,10 @@ const UserSchema: Schema = new Schema(
       trim: true,
       lowercase: true,
     },
-    password: { type: String, required: true },
+    password: { type: String }, // Optional for social login users
+    googleId: { type: String },
+    facebookId: { type: String },
+    twitterId: { type: String },
     role: {
       type: String,
       enum: ["user", "admin", "editor", "author"],

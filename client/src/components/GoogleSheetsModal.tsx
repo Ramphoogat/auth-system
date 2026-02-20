@@ -1,6 +1,7 @@
 
-import { useState, useEffect } from "react";
-import { FiX, FiDatabase, FiDownload, FiUpload, FiRefreshCw } from "react-icons/fi";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { FiX, FiDatabase, FiUpload, FiRefreshCw } from "react-icons/fi";
 import { AxiosError } from "axios";
 import api from "../api/axios";
 import { useToast } from "./ToastProvider";
@@ -18,31 +19,39 @@ interface GoogleSheetsModalProps {
 
 const GoogleSheetsModal = ({ isOpen, onClose, onSyncComplete }: GoogleSheetsModalProps) => {
     const { showSuccess, showError } = useToast();
+    const navigate = useNavigate();
     const [sheetId, setSheetId] = useState("");
     const [isConnected, setIsConnected] = useState(false);
     const [lastSync, setLastSync] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [statusLoading, setStatusLoading] = useState(false);
 
-    useEffect(() => {
-        if (isOpen) {
-            fetchStatus();
-        }
-    }, [isOpen]);
-
-    const fetchStatus = async () => {
+    const fetchStatus = useCallback(async () => {
         try {
             setStatusLoading(true);
             const res = await api.get("/sheets/status"); // Assuming new route base is /api/sheets
             setIsConnected(res.data.connected);
             if (res.data.sheetId) setSheetId(res.data.sheetId);
             setLastSync(res.data.lastSync);
-        } catch (error) {
+        } catch (err: unknown) {
+            const error = err as AxiosError;
             console.error("Failed to fetch sheet status", error);
+            if (error.response && error.response.status === 401) {
+                showError("Session expired. Please login again.");
+                localStorage.removeItem("token");
+                sessionStorage.removeItem("token");
+                navigate("/login");
+            }
         } finally {
             setStatusLoading(false);
         }
-    };
+    }, [navigate, showError]);
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchStatus();
+        }
+    }, [fetchStatus, isOpen]);
 
     const handleConnect = async () => {
         try {
@@ -69,24 +78,9 @@ const GoogleSheetsModal = ({ isOpen, onClose, onSyncComplete }: GoogleSheetsModa
             fetchStatus();
             if (onSyncComplete) onSyncComplete();
         } catch (err: unknown) {
-            const error = err as AxiosError<{ message: string }>;
+            const error = err as AxiosError<{ message: string; details?: unknown }>;
+            console.error("Sync Push Error:", error.response?.data || error); // Log server details
             showError(error.response?.data?.message || "Sync failed");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handlePull = async () => {
-        if (!window.confirm("This will update user data from the Google Sheet. Continue?")) return;
-        try {
-            setIsLoading(true);
-            const res = await api.post("/sheets/sync/pull");
-            showSuccess(res.data.message);
-            fetchStatus();
-            if (onSyncComplete) onSyncComplete();
-        } catch (err: unknown) {
-            const error = err as AxiosError<{ message: string }>;
-            showError(error.response?.data?.message || "Import failed");
         } finally {
             setIsLoading(false);
         }
@@ -150,23 +144,14 @@ const GoogleSheetsModal = ({ isOpen, onClose, onSyncComplete }: GoogleSheetsModa
 
                     {/* Actions */}
                     {isConnected && (
-                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <div className="grid gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                             <button
                                 onClick={handlePush}
                                 disabled={isLoading}
-                                className="flex flex-col items-center justify-center p-4 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 transition-all gap-2"
+                                className="flex items-center justify-center p-4 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 transition-all gap-2"
                             >
                                 <FiUpload className="text-xl" />
                                 <span className="text-xs font-bold">Export Users</span>
-                            </button>
-
-                            <button
-                                onClick={handlePull}
-                                disabled={isLoading}
-                                className="flex flex-col items-center justify-center p-4 rounded-xl bg-purple-50 text-purple-600 hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/30 transition-all gap-2"
-                            >
-                                <FiDownload className="text-xl" />
-                                <span className="text-xs font-bold">Import Users</span>
                             </button>
                         </div>
                     )}

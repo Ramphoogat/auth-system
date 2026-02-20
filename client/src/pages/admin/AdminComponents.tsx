@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 
 
-// Image imports removed and moved to src/constants/backgrounds.ts
-// BACKGROUNDS constant removed and moved to src/constants/backgrounds.ts
-
-
 export interface IUser {
   _id: string;
   name?: string;
@@ -80,16 +76,31 @@ export const UserManagementRow = ({
   allowedRoles = ["user", "author", "editor", "admin"],
   isSelected,
   onSelect,
+  isExpanded: controlledIsExpanded,
+  onToggleExpand,
 }: {
   user: IUser;
   onRoleChange: (userId: string, newRole: string) => Promise<void>;
   allowedRoles?: string[];
   isSelected?: boolean;
   onSelect?: (userId: string) => void;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }) => {
   const [isChanging, setIsChanging] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [localIsExpanded, setLocalIsExpanded] = useState(false);
   const [emailCopied, setEmailCopied] = useState(false);
+
+  const isExpanded = controlledIsExpanded !== undefined ? controlledIsExpanded : localIsExpanded;
+
+  const handleExpandToggle = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (onToggleExpand) {
+      onToggleExpand();
+    } else {
+      setLocalIsExpanded((prev) => !prev);
+    }
+  };
 
   const copyEmail = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -140,7 +151,7 @@ export const UserManagementRow = ({
     <>
       <tr
         className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group border-b border-gray-100 dark:border-gray-700 last:border-0 cursor-pointer ${isExpanded ? "bg-gray-50 dark:bg-gray-800/50" : ""}`}
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleExpandToggle}
       >
         <td className="px-4 md:px-6 py-4" onClick={(e) => e.stopPropagation()}>
           <input
@@ -154,7 +165,7 @@ export const UserManagementRow = ({
           <div className="flex items-center">
             <button
               className="mr-3 text-gray-400 hover:text-emerald-500 transition-colors"
-              onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+              onClick={handleExpandToggle}
             >
               {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
             </button>
