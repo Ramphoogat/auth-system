@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FiUsers, FiActivity, FiLayout, FiCheckCircle, FiFileText, FiSettings, FiCalendar } from "react-icons/fi";
 import { BsFillKanbanFill } from "react-icons/bs";
 import Kanban from "../../components/Kanban";
-import Calendar from "../../components/Calendar";
+import Calendar from "../../components/calendar_ui/Calendar";
 import api from "../../api/axios";
 import { AxiosError } from "axios";
 import DashboardLayout from "../../components/DashboardLayout";

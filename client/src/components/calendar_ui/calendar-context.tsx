@@ -43,6 +43,14 @@ export type CalendarEvent = {
     description?: string;
     tags?: string[];
     creator?: string;
+    createdAt: Date;
+};
+
+export type DateRange = {
+    id: string;
+    start: Date;
+    end: Date;
+    label?: string;
 };
 
 type ContextType = {
@@ -52,7 +60,7 @@ type ContextType = {
     setDate: (date: Date) => void;
     events: CalendarEvent[];
     locale: Locale;
-    setEvents: (date: CalendarEvent[]) => void;
+    setEvents: (events: CalendarEvent[]) => void;
     onChangeView?: (view: View) => void;
     onEventClick?: (event: CalendarEvent) => void;
     enableHotkeys?: boolean;
@@ -61,6 +69,20 @@ type ContextType = {
     setIsEventModalOpen: (open: boolean) => void;
     selectedDateForEvent: Date | null;
     setSelectedDateForEvent: (date: Date | null) => void;
+    selectedEventForEdit: CalendarEvent | null;
+    setSelectedEventForEdit: (event: CalendarEvent | null) => void;
+    isTasksPanelOpen: boolean;
+    setIsTasksPanelOpen: (open: boolean) => void;
+    deleteEvent: (id: string) => void;
+    undoDelete: () => void;
+    // Multi-range support
+    ranges: DateRange[];
+    draftStart: Date | null;
+    setDraftStart: (d: Date | null) => void;
+    addRange: (range: DateRange) => void;
+    deleteRange: (id: string) => void;
+    undoDeleteRange: () => void;
+    renameRange: (id: string, label: string) => void;
 };
 
 export const Context = createContext<ContextType>({} as ContextType);

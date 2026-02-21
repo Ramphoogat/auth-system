@@ -43,7 +43,18 @@ export interface Column {
     id: string;
     title: string;
     taskIds: string[];
+    color?: string; // e.g., 'indigo', 'amber', 'emerald', 'rose', 'cyan', 'purple', 'gray'
 }
+
+const COLUMN_COLORS = [
+    { name: 'Indigo', value: 'indigo', bg: 'bg-indigo-500', headerBg: 'bg-indigo-100 dark:bg-indigo-900/40', text: 'text-indigo-800 dark:text-indigo-300', border: 'border-indigo-200 dark:border-indigo-800' },
+    { name: 'Amber', value: 'amber', bg: 'bg-amber-500', headerBg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-800 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-800' },
+    { name: 'Emerald', value: 'emerald', bg: 'bg-emerald-500', headerBg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-800 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-800' },
+    { name: 'Rose', value: 'rose', bg: 'bg-rose-500', headerBg: 'bg-rose-100 dark:bg-rose-900/40', text: 'text-rose-800 dark:text-rose-300', border: 'border-rose-200 dark:border-rose-800' },
+    { name: 'Cyan', value: 'cyan', bg: 'bg-cyan-500', headerBg: 'bg-cyan-100 dark:bg-cyan-900/40', text: 'text-cyan-800 dark:text-cyan-300', border: 'border-cyan-200 dark:border-cyan-800' },
+    { name: 'Purple', value: 'purple', bg: 'bg-purple-500', headerBg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-800 dark:text-purple-300', border: 'border-purple-200 dark:border-purple-800' },
+    { name: 'Gray', value: 'gray', bg: 'bg-gray-400', headerBg: 'bg-gray-200 dark:bg-gray-800', text: 'text-gray-800 dark:text-gray-300', border: 'border-gray-300 dark:border-gray-700' },
+];
 
 export interface BoardData {
     tasks: { [key: string]: Task };
@@ -60,16 +71,19 @@ const initialData: BoardData = {
             id: 'todo',
             title: 'To Do',
             taskIds: [],
+            color: 'indigo',
         },
         'in-progress': {
             id: 'in-progress',
             title: 'In Progress',
             taskIds: [],
+            color: 'amber',
         },
         'done': {
             id: 'done',
             title: 'Done',
             taskIds: [],
+            color: 'emerald',
         },
     },
     columnOrder: ['todo', 'in-progress', 'done'],
@@ -261,19 +275,21 @@ export const TaskCard: React.FC<{ task: Task; onDelete: () => void; onContextMen
 interface AddColumnModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (title: string) => void;
+    onAdd: (title: string, color: string) => void;
 }
 
 const AddColumnModal: React.FC<AddColumnModalProps> = ({ isOpen, onClose, onAdd }) => {
     const [title, setTitle] = useState('');
+    const [color, setColor] = useState('indigo');
 
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (title.trim()) {
-            onAdd(title);
+            onAdd(title, color);
             setTitle('');
+            setColor('indigo');
         }
     };
 
@@ -300,6 +316,22 @@ const AddColumnModal: React.FC<AddColumnModalProps> = ({ isOpen, onClose, onAdd 
                             className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                             autoFocus
                         />
+                    </div>
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            Column Color
+                        </label>
+                        <div className="flex gap-3 flex-wrap">
+                            {COLUMN_COLORS.map(c => (
+                                <button
+                                    key={c.value}
+                                    type="button"
+                                    onClick={() => setColor(c.value)}
+                                    title={c.name}
+                                    className={`w-8 h-8 rounded-full ${c.bg} focus:outline-none transition-transform ${color === c.value ? 'ring-2 ring-offset-2 ring-indigo-500 dark:ring-offset-gray-800 scale-110' : 'hover:scale-110'}`}
+                                />
+                            ))}
+                        </div>
                     </div>
                     <div className="flex justify-end space-x-3">
                         <button
@@ -546,12 +578,13 @@ const Kanban: React.FC = () => {
         setContextMenu(null);
     };
 
-    const handleAddColumn = (title: string) => {
+    const handleAddColumn = (title: string, color: string) => {
         const newColumnId = `column-${Date.now()}`;
         const newColumn: Column = {
             id: newColumnId,
             title: title,
             taskIds: [],
+            color: color,
         };
 
         setData(prev => ({
@@ -666,16 +699,15 @@ const Kanban: React.FC = () => {
                         {data.columnOrder.map(colId => {
                             if (colId === contextMenu.sourceColumnId) return null;
                             const col = data.columns[colId];
+                            const colorObj = COLUMN_COLORS.find(c => c.value === (col.color || 'gray')) || COLUMN_COLORS[6];
+
                             return (
                                 <button
                                     key={colId}
                                     onClick={() => handleMoveTask(colId)}
                                     className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center"
                                 >
-                                    <span className={`w-2 h-2 rounded-full mr-2 ${col.id === 'todo' ? 'bg-indigo-500' :
-                                        col.id === 'in-progress' ? 'bg-amber-500' :
-                                            col.id === 'done' ? 'bg-emerald-500' : 'bg-gray-400'
-                                        }`}></span>
+                                    <span className={`w-2 h-2 rounded-full mr-2 ${colorObj.bg}`}></span>
                                     {col.title}
                                 </button>
                             );
@@ -715,32 +747,32 @@ const Kanban: React.FC = () => {
                 </div>
             </div>
 
-            {/* Left Button - Full Height Transparent Area */}
-            <button
-                onClick={() => scroll('left')}
-                className="absolute left-0 top-0 screen-full w-16 z-30 group/left opacity-50 hover:opacity-100 transition-opacity duration-300"
-                aria-label="Scroll Left"
-            >
-                {/* Visible Button */}
-                <div className="absolute left-4 top-100 -translate-y-1/2 p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-300 shadow-xl group-hover/left:bg-white dark:group-hover/left:bg-gray-700 group-hover/left:scale-110 group-hover/left:text-indigo-600 dark:group-hover/left:text-indigo-400 transition-all">
-                    <FiChevronLeft className="w-5 h-5" />
-                </div>
-            </button>
-
-            {/* Right Button - Full Height Transparent Area */}
-            <button
-                onClick={() => scroll('right')}
-                className="absolute right-0 top-0 screen-full w-16 z-30 group/right opacity-50 hover:opacity-100 transition-opacity duration-300"
-                aria-label="Scroll Right"
-            >
-                {/* Visible Button */}
-                <div className="absolute right-4 top-100 -translate-y-1/2 p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-300 shadow-xl group-hover/right:bg-white dark:group-hover/right:bg-gray-700 group-hover/right:scale-110 group-hover/right:text-indigo-600 dark:group-hover/right:text-indigo-400 transition-all">
-                    <FiChevronRight className="w-5 h-5" />
-                </div>
-            </button>
-
             {/* Board Area */}
             <div className="flex-1 relative group/board">
+                {/* Left Button - Full Height Transparent Area */}
+                <button
+                    onClick={() => scroll('left')}
+                    className="absolute -left-6 md:-left-8 top-0 h-full w-6 md:w-8 z-30 group/left hover:bg-indigo-500/5 dark:hover:bg-indigo-400/5 transition-all duration-300 flex items-center justify-center opacity-50 hover:opacity-100"
+                    aria-label="Scroll Left"
+                >
+                    {/* Visible Button */}
+                    <div className="bg-white/90 h-full dark:bg-gray-800/90 text-gray-600 rounded-r-xl dark:text-gray-300 shadow-xl group-hover/left:bg-white dark:group-hover/left:bg-gray-700 group-hover/left:scale-110 group-hover/left:text-indigo-600 dark:group-hover/left:text-indigo-400 transition-all">
+                        <FiChevronLeft className="w-14 h-14 md:w-7 md:h-100" />
+                    </div>
+                </button>
+
+                {/* Right Button - Full Height Transparent Area */}
+                <button
+                    onClick={() => scroll('right')}
+                    className="absolute -right-6 md:-right-8 top-0 h-full w-6 md:w-8 z-30 group/right hover:bg-indigo-500/5 dark:hover:bg-indigo-400/5 transition-all duration-300 flex items-center justify-center opacity-50 hover:opacity-100 text-gray-500"
+                    aria-label="Scroll Right"
+                >
+                    {/* Visible Button */}
+                    <div className="bg-white/90 h-full dark:bg-gray-800/90 text-gray-600 rounded-l-xl dark:text-gray-300 shadow-xl group-hover/right:bg-white dark:group-hover/right:bg-gray-700 group-hover/right:scale-110 group-hover/right:text-indigo-600 dark:group-hover/right:text-indigo-400 transition-all">
+                        <FiChevronRight className="w-14 h-14 md:w-7 md:h-100" />
+                    </div>
+                </button>
+
                 <div
                     ref={scrollContainerRef}
                     className="h-full overflow-x-auto pb-3 scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -753,22 +785,22 @@ const Kanban: React.FC = () => {
                             return (
                                 <div key={column.id} className="w-80 flex-shrink-0 flex flex-col h-full rounded-2xl bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                                     {/* Column Header */}
-                                    <div className="p-4 flex items-center justify-between sticky top-0 bg-transparent z-10">
-                                        <div className="flex items-center space-x-2">
-                                            <div className={`w-3 h-3 rounded-full ${column.id === 'todo' ? 'bg-indigo-500' :
-                                                column.id === 'in-progress' ? 'bg-amber-500' :
-                                                    column.id === 'done' ? 'bg-emerald-500' :
-                                                        'bg-gray-400'
-                                                }`} />
-                                            <h3 className="font-bold text-gray-700 dark:text-gray-200 text-sm">{column.title}</h3>
-                                            <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full font-medium">
-                                                {tasks.length}
-                                            </span>
-                                        </div>
-                                        <div className="relative">
-                                            <DropdownMenu onDelete={() => handleDeleteColumn(column.id)} />
-                                        </div>
-                                    </div>
+                                    {(() => {
+                                        const colorObj = COLUMN_COLORS.find(c => c.value === (column.color || 'gray')) || COLUMN_COLORS[6];
+                                        return (
+                                            <div className={`p-4 flex items-center justify-between sticky top-0 z-10 rounded-t-2xl border-b ${colorObj.headerBg} ${colorObj.border} mb-3 backdrop-blur-sm`}>
+                                                <div className="flex items-center space-x-2 w-full">
+                                                    <h3 className={`font-bold text-sm truncate ${colorObj.text}`}>{column.title}</h3>
+                                                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold bg-white/60 dark:bg-black/20 ${colorObj.text}`}>
+                                                        {tasks.length}
+                                                    </span>
+                                                </div>
+                                                <div className="relative pl-2">
+                                                    <DropdownMenu onDelete={() => handleDeleteColumn(column.id)} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
 
                                     {/* Task List */}
                                     <div className="flex-1 overflow-y-auto px-3 pb-3 custom-scrollbar-light">

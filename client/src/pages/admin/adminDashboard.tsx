@@ -24,7 +24,7 @@ import OurTeams from "../../components/OurTeams";
 
 import Settings from "../../components/AdminSettings";
 import Kanban from "../../components/Kanban";
-import Calendar from "../../components/Calendar";
+import Calendar from "../../components/calendar_ui/Calendar";
 import { useToast } from "../../components/ToastProvider";
 
 import { FiChevronDown } from "react-icons/fi";

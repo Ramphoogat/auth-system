@@ -8,6 +8,7 @@ import cors from "cors";
 import authRoutes from "./src/routes/authRoutes.js";
 import settingsRoutes from "./src/routes/settings.js";
 import sheetRoutes from "./src/routes/sheetRoutes.js";
+import calendarRoutes from "./src/routes/calendarRoutes.js";
 import { performSheetSync } from "./src/controllers/sheetController.js";
 
 const app = express();
@@ -27,6 +28,7 @@ app.get('/meta.json', (req, res) => res.status(204).end());
 app.use("/api/auth", authRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/sheets", sheetRoutes);
+app.use("/api/calendar", calendarRoutes);
 
 app.get("/", (req, res) => {
   res.send("MERN Auth Server is running");
