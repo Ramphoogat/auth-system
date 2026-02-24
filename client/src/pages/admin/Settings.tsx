@@ -70,33 +70,6 @@ const Settings: React.FC = () => {
             </div>
           </div>
         );
-      case 'about':
-        return (
-          <div className="p-8 flex flex-col items-center text-center">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-400 to-blue-600 rounded-3xl shadow-xl flex items-center justify-center mb-6">
-              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-20.4l.054-.01c.562-.103 1.139-.082 1.682.064l.016.004a2.298 2.298 0 00.606.082h.027a2.298 2.298 0 00.606-.082l.016-.004c.543-.146 1.12-.167 1.682-.064l.054.01m-3.44 20.4l3.44-20.4m-3.44 20.4v1.291a1 1 0 001.291.956L21 16.059a1 1 0 00.709-.27L21 12.059" />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-800">Premium OS</h1>
-            <p className="text-gray-500 mt-1">Version 1.0.4 (Vite Edition)</p>
-            <div className="mt-8 text-sm text-gray-600 bg-gray-50 rounded-xl p-4 w-full text-left border border-gray-100">
-               <div className="flex justify-between py-1 border-b border-gray-100">
-                 <span className="font-medium">Processor</span>
-                 <span className="text-gray-400">8-Core Agentic Engine</span>
-               </div>
-               <div className="flex justify-between py-1 border-b border-gray-100">
-                 <span className="font-medium">Memory</span>
-                 <span className="text-gray-400">16 GB Unified Brain</span>
-               </div>
-               <div className="flex justify-between py-1">
-                 <span className="font-medium">Storage</span>
-                 <span className="text-gray-400">512 GB SSD Knowledge Base</span>
-               </div>
-            </div>
-            <p className="mt-4 text-[10px] text-gray-400">© 2026 Antigravity Systems. All rights reserved.</p>
-          </div>
-        );
       default:
         return (
           <div className="p-8 flex items-center justify-center h-full">
@@ -125,7 +98,7 @@ const Settings: React.FC = () => {
             </div>
           ))}
         </div>
-        
+
         <div className="mt-auto p-4 bg-blue-50 rounded-2xl border border-blue-100">
           <p className="text-[11px] text-blue-600 font-bold mb-1">PRO TIP</p>
           <p className="text-[10px] text-blue-400 leading-tight italic">You can also access some settings from the Control Center in the top bar.</p>

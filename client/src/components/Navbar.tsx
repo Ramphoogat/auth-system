@@ -36,7 +36,7 @@ const Navbar: React.FC<NavbarProps> = ({
     const { notifications: contextNotifications } = useNotifications();
 
     return (
-        <header className="h-20 lg:h-24 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40">
+        <header className="h-19 lg:h-19 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40">
             <div className="flex items-center space-x-2 md:space-x-4">
                 <button
                     onClick={() => setIsMobileMenuOpen(true)}
@@ -44,7 +44,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 >
                     <FiMenu className="w-6 h-6" />
                 </button>
-                <div className="hidden sm:flex items-center bg-gray-100 dark:bg-gray-900/50 rounded-2xl px-4 py-2 w-48 md:w-64 lg:w-96 border border-transparent focus-within:border-emerald-500/50 focus-within:bg-white dark:focus-within:bg-gray-800 transition-all shadow-inner">
+                <div className="hidden sm:flex items-center bg-gray-100 dark:bg-gray-900/50 rounded-2xl px-4 py-2 w-32 md:w-40 lg:w-48 focus-within:w-48 md:focus-within:w-64 lg:focus-within:w-96 border border-transparent focus-within:border-emerald-500/50 focus-within:bg-white dark:focus-within:bg-gray-800 transition-all duration-300 shadow-inner overflow-hidden">
                     <FiSearch className="text-gray-400 w-4 h-4 shrink-0" />
                     <input
                         id="search-input"

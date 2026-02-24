@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import SidebarComponent from "./SidebarComponent";
 import Navbar from "./Navbar";
+import { type INotification } from "../pages/users/UsersComponents";
 
-export interface INotification {
-  id: string;
-  title: string;
-  message: string;
-  time: string;
-  isRead: boolean;
-}
+
 
 interface DashboardLayoutProps {
   title: string;
@@ -25,12 +20,13 @@ interface DashboardLayoutProps {
     username: string;
     role: string;
   };
-  notifications: INotification[];
+
   onLogout: () => void;
   onEditProfile: () => void;
   children: React.ReactNode;
   accentColor?: string; // 'emerald', 'blue', 'purple', etc.
   isScrollable?: boolean;
+  notifications?: INotification[];
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({
@@ -85,7 +81,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col relative overflow-hidden border-1 border-gray-200 dark:border-gray-700">
+      <div className="flex-1 flex flex-col relative overflow-hidden border-3 border-gray-200 dark:border-gray-700">
         <Navbar
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           showNotifications={showNotifications}

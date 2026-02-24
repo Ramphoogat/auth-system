@@ -217,11 +217,11 @@ const UserDashboard = () => {
           </div>
         ) : activeTab === "Calendar" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
-            <Calendar />
+            <Calendar readOnly />
           </div>
         ) : activeTab === "Kanban" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
-            <Kanban />
+            <Kanban readOnly />
           </div>
         ) : activeTab === "Settings" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">

@@ -19,16 +19,35 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Handle favicon and meta.json to prevent 404s
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/meta.json', (req, res) => res.status(204).end());
 
+// Ensure DB is connected before any route runs
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/sheets", sheetRoutes);
 app.use("/api/calendar", calendarRoutes);
+
+app.get("/api", (req, res) => {
+  res.json({
+    message: "API is running",
+    endpoints: [
+      "/api/auth",
+      "/api/settings",
+      "/api/sheets",
+      "/api/calendar"
+    ]
+  });
+});
 
 app.get("/", (req, res) => {
   res.send("MERN Auth Server is running");
@@ -39,38 +58,22 @@ app.get("/", (req, res) => {
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
   
-  // 1. Try connecting to Atlas or configured URI
-  if (process.env.MONGO_URI) {
-    try {
-      await mongoose.connect(process.env.MONGO_URI);
-      console.log("Connected to MongoDB");
-      return;
-    } catch (err) {
-      console.error("MongoDB connection error:", err);
-      console.log("Switching to fallback local database...");
-    }
+  if (!process.env.MONGO_URI) {
+    console.error("No MONGO_URI provided. Server cannot connect to MongoDB.");
+    process.exit(1);
   }
 
-  // 2. Fallback to Memory Server (Dev only)
   try {
-    console.log("Starting MongoDB Memory Server...");
-    const { MongoMemoryServer } = await import("mongodb-memory-server");
-    const mongod = await MongoMemoryServer.create();
-    const uri = mongod.getUri();
-    
-    await mongoose.connect(uri);
-    console.log("Connected to Local In-Memory MongoDB");
-    console.log("WARNING: Data is ephemeral and will be lost on restart.");
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("Connected to MongoDB via URI");
+    return;
   } catch (err) {
-    console.error("Failed to start fallback database:", err);
+    console.error("Crucial MongoDB connection error:", err);
+    process.exit(1);
   }
 };
 
-// Call connection on every request (serverless compatible)
-app.use(async (req, res, next) => {
-  await connectDB();
-  next();
-});
+
 
 // Check if run directly (not imported) - typical for local dev
 import { pathToFileURL } from 'url';

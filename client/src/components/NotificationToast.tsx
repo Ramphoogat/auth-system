@@ -39,7 +39,6 @@ const NotificationToast: React.FC = () => {
             onClick={() => {
               setActiveToast(null);
               removeNotification(activeToast.id);
-            setActiveToast(null);
             }}
             className="text-white/40 hover:text-white transition-colors"
           >

@@ -39,11 +39,12 @@ export type CalendarEvent = {
     start: Date;
     end: Date;
     title: string;
+    type?: 'task';
     color?: VariantProps<typeof monthEventVariants>['variant'];
     description?: string;
     tags?: string[];
     creator?: string;
-    createdAt: Date;
+    createdAt?: Date;
 };
 
 export type DateRange = {
@@ -51,6 +52,11 @@ export type DateRange = {
     start: Date;
     end: Date;
     label?: string;
+    description?: string;
+    colorIndex?: number;
+    createdAt?: Date;
+    googleEventId?: string;
+    googleCalendarId?: string;
 };
 
 type ContextType = {
@@ -74,6 +80,7 @@ type ContextType = {
     isTasksPanelOpen: boolean;
     setIsTasksPanelOpen: (open: boolean) => void;
     deleteEvent: (id: string) => void;
+    clearAllEvents: () => void;
     undoDelete: () => void;
     // Multi-range support
     ranges: DateRange[];
@@ -83,6 +90,9 @@ type ContextType = {
     deleteRange: (id: string) => void;
     undoDeleteRange: () => void;
     renameRange: (id: string, label: string) => void;
+    updateRangeDescription: (id: string, description: string) => void;
+    updateRangeColor: (id: string, colorIndex: number) => void;
+    readOnly?: boolean;
 };
 
 export const Context = createContext<ContextType>({} as ContextType);

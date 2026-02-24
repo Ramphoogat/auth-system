@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useToast } from './ToastProvider';
+import { fetchCalendarData, saveCalendarData, type CalendarPayload } from '../api/calendar';
 
 import {
     FiPlus,
@@ -168,14 +170,14 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({ onDelete }) => {
 };
 
 
-export const TaskCard: React.FC<{ task: Task; onDelete: () => void; onContextMenu: (e: React.MouseEvent) => void }> = ({ task, onDelete, onContextMenu }) => {
+export const TaskCard: React.FC<{ task: Task; onDelete: () => void; onContextMenu: (e: React.MouseEvent) => void; readOnly?: boolean }> = ({ task, onDelete, onContextMenu, readOnly }) => {
     return (
         <div
-            onContextMenu={onContextMenu}
+            onContextMenu={readOnly ? undefined : onContextMenu}
             className={`
             group bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm 
-            hover:shadow-md transition-all duration-200 mb-3 select-none relative
-            hover:-translate-y-1 hover:border-indigo-300 dark:hover:border-indigo-600
+            ${readOnly ? '' : 'hover:shadow-md hover:-translate-y-1 hover:border-indigo-300 dark:hover:border-indigo-600'}
+            transition-all duration-200 mb-3 select-none relative
           `}
         >
             {/* Priority Line Indicator */}
@@ -185,9 +187,11 @@ export const TaskCard: React.FC<{ task: Task; onDelete: () => void; onContextMen
 
             <div className="flex justify-between items-start mb-2.5">
                 <PriorityBadge priority={task.priority} />
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <DropdownMenu onDelete={onDelete} />
-                </div>
+                {!readOnly && (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DropdownMenu onDelete={onDelete} />
+                    </div>
+                )}
             </div>
 
             <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1 leading-tight">
@@ -503,10 +507,18 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, col
 
 // --- Main Kanban Board ---
 
-const Kanban: React.FC = () => {
+const Kanban: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
+    const { showSuccess } = useToast();
     const [data, setData] = useState<BoardData>(initialData);
     const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // Calendar State
+    const [calendarData, setCalendarData] = useState<CalendarPayload>({ events: [], ranges: [] });
+
+    useEffect(() => {
+        fetchCalendarData().then(res => setCalendarData(res)).catch(console.error);
+    }, []);
 
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<{
@@ -596,6 +608,7 @@ const Kanban: React.FC = () => {
             columnOrder: [...prev.columnOrder, newColumnId],
         }));
         setIsColumnModalOpen(false);
+        showSuccess(`Column "${title}" added`);
     };
 
     const openAddTaskModal = (columnId: string) => {
@@ -603,7 +616,7 @@ const Kanban: React.FC = () => {
         setIsTaskModalOpen(true);
     };
 
-    const handleAddTask = (taskData: Omit<Task, 'id' | 'assignees' | 'attachments' | 'comments'>) => {
+    const handleAddTask = async (taskData: Omit<Task, 'id' | 'assignees' | 'attachments' | 'comments'>) => {
         if (!activeColumnId) return;
 
         const newTaskId = `task-${Date.now()}`;
@@ -637,9 +650,35 @@ const Kanban: React.FC = () => {
 
         setIsTaskModalOpen(false);
         setActiveColumnId(null);
+        showSuccess(`Task "${taskData.content}" added`);
+
+        // Add to Calendar
+        const newEventDate = taskData.dueDate ? new Date(taskData.dueDate) : new Date();
+        const newEvent = {
+            id: newTaskId,
+            start: newEventDate,
+            end: newEventDate,
+            title: taskData.content,
+            color: 'default' as const,
+            description: taskData.description,
+            tags: taskData.tags,
+            createdAt: new Date(),
+        };
+
+        const newCalendarPayload = {
+            ...calendarData,
+            events: [...calendarData.events, newEvent]
+        };
+        setCalendarData(newCalendarPayload);
+        try {
+            await saveCalendarData(newCalendarPayload);
+        } catch (err) {
+            console.error('Failed to save task to calendar:', err);
+        }
     };
 
-    const handleDeleteTask = (columnId: string, taskId: string) => {
+    const handleDeleteTask = async (columnId: string, taskId: string) => {
+        const taskName = data.tasks[taskId]?.content || 'Task';
         const column = data.columns[columnId];
         const newTaskIds = column.taskIds.filter(id => id !== taskId);
 
@@ -659,10 +698,24 @@ const Kanban: React.FC = () => {
                 [newColumn.id]: newColumn
             }
         }));
+        showSuccess(`Task "${taskName}" deleted`);
+
+        // Delete from Calendar
+        const newCalendarPayload = {
+            ...calendarData,
+            events: calendarData.events.filter(e => e.id !== taskId)
+        };
+        setCalendarData(newCalendarPayload);
+        try {
+            await saveCalendarData(newCalendarPayload);
+        } catch (err) {
+            console.error('Failed to delete task from calendar:', err);
+        }
     };
 
-    const handleDeleteColumn = (columnId: string) => {
+    const handleDeleteColumn = async (columnId: string) => {
         const column = data.columns[columnId];
+        const columnName = column.title;
         const taskIdsToRemove = column.taskIds;
 
         const newColumnOrder = data.columnOrder.filter(id => id !== columnId);
@@ -680,6 +733,19 @@ const Kanban: React.FC = () => {
             columns: newColumns,
             columnOrder: newColumnOrder
         }));
+        showSuccess(`Column "${columnName}" deleted`);
+
+        // Delete from Calendar
+        const newCalendarPayload = {
+            ...calendarData,
+            events: calendarData.events.filter(e => !taskIdsToRemove.includes(e.id))
+        };
+        setCalendarData(newCalendarPayload);
+        try {
+            await saveCalendarData(newCalendarPayload);
+        } catch (err) {
+            console.error('Failed to delete column tasks from calendar:', err);
+        }
     };
 
     return (
@@ -737,14 +803,16 @@ const Kanban: React.FC = () => {
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm mt-1">Manage tasks and track progress. Right-click cards to move them.</p>
                 </div>
-                <div className="flex w-full md:w-auto space-x-3 justify-center md:justify-end">
-                    <button
-                        onClick={() => setIsColumnModalOpen(true)}
-                        className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-500/30 transition-all active:scale-95 font-medium text-sm w-full md:w-auto justify-center"
-                    >
-                        <FiPlus className="mr-2" /> Add Column
-                    </button>
-                </div>
+                {!readOnly && (
+                    <div className="flex w-full md:w-auto space-x-3 justify-center md:justify-end">
+                        <button
+                            onClick={() => setIsColumnModalOpen(true)}
+                            className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-500/30 transition-all active:scale-95 font-medium text-sm w-full md:w-auto justify-center"
+                        >
+                            <FiPlus className="mr-2" /> Add Column
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Board Area */}
@@ -752,11 +820,11 @@ const Kanban: React.FC = () => {
                 {/* Left Button - Full Height Transparent Area */}
                 <button
                     onClick={() => scroll('left')}
-                    className="absolute -left-6 md:-left-8 top-0 h-full w-6 md:w-8 z-30 group/left hover:bg-indigo-500/5 dark:hover:bg-indigo-400/5 transition-all duration-300 flex items-center justify-center opacity-50 hover:opacity-100"
+                    className="absolute -left-6 md:-left-8 top-30 h-100 w-6 md:w-8 z-30 group/left hover:bg-indigo-500/5 dark:hover:bg-indigo-400/5 transition-all duration-300 flex items-center justify-center opacity-50 hover:opacity-100"
                     aria-label="Scroll Left"
                 >
                     {/* Visible Button */}
-                    <div className="bg-white/90 h-full dark:bg-gray-800/90 text-gray-600 rounded-r-xl dark:text-gray-300 shadow-xl group-hover/left:bg-white dark:group-hover/left:bg-gray-700 group-hover/left:scale-110 group-hover/left:text-indigo-600 dark:group-hover/left:text-indigo-400 transition-all">
+                    <div className="bg-transparent h-full dark:bg-transparent text-gray-600 rounded-r-xl dark:text-gray-300 group-hover/left:bg-white dark:group-hover/left:bg-gray-700 group-hover/left:scale-110 group-hover/left:text-indigo-600 dark:group-hover/left:text-indigo-400 transition-all">
                         <FiChevronLeft className="w-14 h-14 md:w-7 md:h-100" />
                     </div>
                 </button>
@@ -764,11 +832,11 @@ const Kanban: React.FC = () => {
                 {/* Right Button - Full Height Transparent Area */}
                 <button
                     onClick={() => scroll('right')}
-                    className="absolute -right-6 md:-right-8 top-0 h-full w-6 md:w-8 z-30 group/right hover:bg-indigo-500/5 dark:hover:bg-indigo-400/5 transition-all duration-300 flex items-center justify-center opacity-50 hover:opacity-100 text-gray-500"
+                    className="absolute -right-6 md:-right-8 top-30 h-100 w-6 md:w-8 z-30 group/right hover:bg-indigo-500/5 dark:hover:bg-indigo-400/5 transition-all duration-300 flex items-center justify-center opacity-50 hover:opacity-100 text-gray-500"
                     aria-label="Scroll Right"
                 >
                     {/* Visible Button */}
-                    <div className="bg-white/90 h-full dark:bg-gray-800/90 text-gray-600 rounded-l-xl dark:text-gray-300 shadow-xl group-hover/right:bg-white dark:group-hover/right:bg-gray-700 group-hover/right:scale-110 group-hover/right:text-indigo-600 dark:group-hover/right:text-indigo-400 transition-all">
+                    <div className="bg-transparent h-full dark:bg-transparent text-gray-600 rounded-l-xl dark:text-gray-300 group-hover/right:bg-white dark:group-hover/right:bg-gray-700 group-hover/right:scale-110 group-hover/right:text-indigo-600 dark:group-hover/right:text-indigo-400 transition-all">
                         <FiChevronRight className="w-14 h-14 md:w-7 md:h-100" />
                     </div>
                 </button>
@@ -795,9 +863,11 @@ const Kanban: React.FC = () => {
                                                         {tasks.length}
                                                     </span>
                                                 </div>
-                                                <div className="relative pl-2">
-                                                    <DropdownMenu onDelete={() => handleDeleteColumn(column.id)} />
-                                                </div>
+                                                {!readOnly && (
+                                                    <div className="relative pl-2">
+                                                        <DropdownMenu onDelete={() => handleDeleteColumn(column.id)} />
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     })()}
@@ -811,6 +881,7 @@ const Kanban: React.FC = () => {
                                                     task={task}
                                                     onDelete={() => handleDeleteTask(column.id, task.id)}
                                                     onContextMenu={(e) => handleContextMenu(e, task.id, task.content, column.id)}
+                                                    readOnly={readOnly}
                                                 />
                                             ))}
                                             {tasks.length === 0 && (
@@ -822,14 +893,16 @@ const Kanban: React.FC = () => {
                                     </div>
 
                                     {/* Footer - Add Task button */}
-                                    <div className="p-3 mt-auto">
-                                        <button
-                                            onClick={() => openAddTaskModal(column.id)}
-                                            className="w-full py-2 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm font-medium border border-transparent hover:border-gray-300 dark:hover:border-gray-600 border-dashed"
-                                        >
-                                            <FiPlus className="mr-1.5" /> Add card
-                                        </button>
-                                    </div>
+                                    {!readOnly && (
+                                        <div className="p-3 mt-auto">
+                                            <button
+                                                onClick={() => openAddTaskModal(column.id)}
+                                                className="w-full py-2 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm font-medium border border-transparent hover:border-gray-300 dark:hover:border-gray-600 border-dashed"
+                                            >
+                                                <FiPlus className="mr-1.5" /> Add card
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}

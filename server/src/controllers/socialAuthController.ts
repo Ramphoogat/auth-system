@@ -94,11 +94,14 @@ export const googleAuth = (req: Request, res: Response) => {
   const scopes = [
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar.readonly",
   ];
 
   const url = googleClient.generateAuthUrl({
     access_type: "offline",
     scope: scopes,
+    prompt: "consent",
   });
 
   res.redirect(url);
@@ -135,14 +138,18 @@ export const googleCallback = async (req: Request, res: Response) => {
         isVerified: true,
         role: "user", // Default role
         password: "social-login-" + Math.random().toString(36), // Dummy password
+        googleAccessToken: tokens.access_token,
+        googleRefreshToken: tokens.refresh_token,
       });
       await user.save();
     } else {
       // Update existing user with googleId if not present
       if (!user.googleId) {
         user.googleId = data.id as string;
-        await user.save();
       }
+      if (tokens.access_token) user.googleAccessToken = tokens.access_token;
+      if (tokens.refresh_token) user.googleRefreshToken = tokens.refresh_token;
+      await user.save();
     }
 
     // Generate JWT
@@ -161,57 +168,78 @@ export const googleCallback = async (req: Request, res: Response) => {
   }
 };
 
-// Facebook OAuth Strategy (Manual Implementation)
-export const facebookAuth = (req: Request, res: Response) => {
-  const client_id = process.env.FACEBOOK_CLIENT_ID;
-  const redirect_uri = `${process.env.SERVER_URL || "http://localhost:5000"}/api/auth/facebook/callback`;
-  const url = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=email,public_profile`;
+// GitHub OAuth Strategy
+export const githubAuth = (req: Request, res: Response) => {
+  const client_id = process.env.GITHUB_CLIENT_ID;
+  const redirect_uri = `${process.env.SERVER_URL || "http://localhost:5000"}/api/auth/github/callback`;
+  const url = `https://github.com/login/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=user:email&prompt=consent`;
   res.redirect(url);
 };
 
-export const facebookCallback = async (req: Request, res: Response) => {
+export const githubCallback = async (req: Request, res: Response) => {
   const { code } = req.query;
-  const client_id = process.env.FACEBOOK_CLIENT_ID;
-  const client_secret = process.env.FACEBOOK_CLIENT_SECRET;
-  const redirect_uri = `${process.env.SERVER_URL || "http://localhost:5000"}/api/auth/facebook/callback`;
-
+  const client_id = process.env.GITHUB_CLIENT_ID;
+  const client_secret = process.env.GITHUB_CLIENT_SECRET;
+  
   try {
     // Exchange code for token
     const tokenResponse = await fetch(
-      `https://graph.facebook.com/v18.0/oauth/access_token?client_id=${client_id}&redirect_uri=${redirect_uri}&client_secret=${client_secret}&code=${code}`
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          client_id,
+          client_secret,
+          code,
+        }),
+      }
     );
     const tokenData = await tokenResponse.json();
 
-    if (tokenData.error) throw new Error(tokenData.error.message);
+    if (tokenData.error) throw new Error(tokenData.error_description || tokenData.error);
 
     // Get User Info
-    const userResponse = await fetch(
-      `https://graph.facebook.com/me?fields=id,name,email&access_token=${tokenData.access_token}`
-    );
+    const userResponse = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+      },
+    });
     const userData = await userResponse.json();
 
-    if (!userData.email) {
-        // Facebook might not return email if user didn't grant permission or signed up with phone
-        sendLoaderPage(res, `${CLIENT_URL}/login?error=Facebook login failed: No email provided`, "Redirecting...");
+    // Get primary email
+    const emailResponse = await fetch("https://api.github.com/user/emails", {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+      },
+    });
+    const emailData = await emailResponse.json();
+    const primaryEmail = emailData.find((email: any) => email.primary)?.email || emailData[0]?.email;
+
+    if (!primaryEmail) {
+        sendLoaderPage(res, `${CLIENT_URL}/login?error=GitHub login failed: No primary email found`, "Redirecting...");
         return;
     }
 
-    let user = await User.findOne({ email: userData.email });
+    let user = await User.findOne({ email: primaryEmail });
 
     if (!user) {
         user = new User({
-            name: userData.name,
-            email: userData.email,
-            username: userData.email.split("@")[0] + Math.random().toString(36).substring(7),
-            facebookId: userData.id,
+            name: userData.name || userData.login,
+            email: primaryEmail,
+            username: userData.login || primaryEmail.split("@")[0] + Math.random().toString(36).substring(7),
+            githubId: userData.id.toString(),
             isVerified: true,
             role: "user",
             password: "social-login-" + Math.random().toString(36),
         });
         await user.save();
     } else {
-        if (!user.facebookId) {
-            user.facebookId = userData.id;
+        if (!user.githubId) {
+            user.githubId = userData.id.toString();
             await user.save();
         }
     }
@@ -225,17 +253,7 @@ export const facebookCallback = async (req: Request, res: Response) => {
     sendLoaderPage(res, `${CLIENT_URL}/login?token=${token}&role=${user.role}`, "Login Successful! Redirecting...");
 
   } catch (error) {
-    console.error("Facebook Auth Error:", error);
-     sendLoaderPage(res, `${CLIENT_URL}/login?error=Facebook login failed`, "Redirecting...");
+    console.error("GitHub Auth Error:", error);
+     sendLoaderPage(res, `${CLIENT_URL}/login?error=GitHub login failed`, "Redirecting...");
   }
-};
-
-
-export const twitterAuth = (req: Request, res: Response) => {
-     
-     res.redirect(`${CLIENT_URL}/login?error=Twitter login not fully configured on server`);
-};
-
-export const twitterCallback = async (req: Request, res: Response) => {
-    res.redirect(`${CLIENT_URL}/login?error=Twitter login not implemented`);
 };

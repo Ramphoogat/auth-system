@@ -9,6 +9,8 @@ import {
   FiTrash2,
   FiMinimize2,
   FiCalendar,
+  FiMessageSquare,
+  FiChevronDown,
 } from "react-icons/fi";
 
 import api from "../../api/axios";
@@ -20,22 +22,63 @@ import FormSection from "../../components/FormSection";
 import Requests from "../../components/requests";
 import CreateUserModal from "../../components/CreateUserModal";
 
-import OurTeams from "../../components/OurTeams";
-
 import Settings from "../../components/AdminSettings";
 import Kanban from "../../components/Kanban";
 import Calendar from "../../components/calendar_ui/Calendar";
+import Chats from "../../components/Chats";
 import { useToast } from "../../components/ToastProvider";
 
-import { FiChevronDown } from "react-icons/fi";
+
 import { useDashboardSlug } from "../../components/url_slug";
 import {
   UserManagementRow,
   type IUser,
   type IAdminStats,
-  type INotification,
 } from "./AdminComponents";
 import { BsFillKanbanFill } from "react-icons/bs";
+
+const idToSlug = {
+  Overview: "overview",
+  UserManagement: "management",
+  Settings: "settings",
+  Form: "Form",
+  Requests: "requests",
+  Chats: "chats",
+  Calendar: "calendar",
+  Kanban: "kanban",
+};
+
+const chartDataMap: Record<string, { label: string; value: number }[]> = {
+  "Last 7 Days": [
+    { label: "Mon", value: 40 },
+    { label: "Tue", value: 70 },
+    { label: "Wed", value: 45 },
+    { label: "Thu", value: 90 },
+    { label: "Fri", value: 65 },
+    { label: "Sat", value: 30 },
+    { label: "Sun", value: 85 },
+  ],
+  "Last Month": [
+    { label: "Week 1", value: 250 },
+    { label: "Week 2", value: 320 },
+    { label: "Week 3", value: 280 },
+    { label: "Week 4", value: 410 },
+  ],
+  "Last 6 Months": [
+    { label: "Aug", value: 120 },
+    { label: "Sep", value: 150 },
+    { label: "Oct", value: 135 },
+    { label: "Nov", value: 180 },
+    { label: "Dec", value: 210 },
+    { label: "Jan", value: 195 },
+  ],
+  "Last Year": [
+    { label: "Q1", value: 450 },
+    { label: "Q2", value: 520 },
+    { label: "Q3", value: 480 },
+    { label: "Q4", value: 610 },
+  ],
+};
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -47,7 +90,6 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [statsData, setStatsData] = useState<IAdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [notifications] = useState<INotification[]>([]);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -55,17 +97,11 @@ const AdminDashboard = () => {
 
   const [roleFilter, setRoleFilter] = useState("all");
   const [isRoleDropDownOpen, setIsRoleDropDownOpen] = useState(false);
+  const [timeRange, setTimeRange] = useState("Last 7 Days");
+  const [isTimeRangeDropdownOpen, setIsTimeRangeDropdownOpen] = useState(false);
 
-  const idToSlug = {
-    Overview: "overview",
-    UserManagement: "management",
-    Settings: "settings",
-    Form: "Form",
-    Requests: "requests",
-    Calendar: "calendar",
-    Kanban: "kanban",
-    OurTeams: "teams",
-  };
+  const currentChartData = chartDataMap[timeRange] || chartDataMap["Last 7 Days"];
+  const maxChartValue = Math.max(...currentChartData.map(d => d.value), 1);
 
   const { activeTab, handleTabChange } = useDashboardSlug(idToSlug, "Overview");
 
@@ -220,9 +256,9 @@ const AdminDashboard = () => {
     { icon: <FiShield />, label: "Management", id: "UserManagement" },
     { icon: <FiLayout />, label: "Role Request Form", id: "Form" },
     { icon: <FiShield />, label: "Requests", id: "Requests" },
+    { icon: <FiMessageSquare />, label: "Chats", id: "Chats" },
     { icon: <FiCalendar />, label: "Calendar", id: "Calendar" },
     { icon: <BsFillKanbanFill />, label: "Kanban", id: "Kanban" },
-    { icon: <FiUsers />, label: "Our Teams", id: "OurTeams" },
     { icon: <FiSettings />, label: "Settings", id: "Settings" },
   ];
 
@@ -266,7 +302,6 @@ const AdminDashboard = () => {
         username: adminUsername,
         role: "Administrator",
       }}
-      notifications={notifications}
       onLogout={handleLogout}
       onEditProfile={() => setIsProfileModalOpen(true)}
       accentColor="indigo"
@@ -277,6 +312,8 @@ const AdminDashboard = () => {
           <div className="flex-1 flex items-center justify-center">
             <Loader text="Loading dashboard data..." />
           </div>
+
+          // System overview tab starts here.
         ) : activeTab === "Overview" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar pr-2 space-y-8">
             <div className="mb-6">
@@ -310,6 +347,75 @@ const AdminDashboard = () => {
                   </p>
                 </div>
               ))}
+            </div>
+
+            {/* Analytics Section Placeholder */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              {/* Bar Chart Placeholder */}
+              <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-lg">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-gray-800 dark:text-white font-bold text-lg tracking-tight">Activity Overview</h3>
+                    <p className="text-xs text-gray-500 mt-1">Analytics data will be displayed here.</p>
+                  </div>
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsTimeRangeDropdownOpen(!isTimeRangeDropdownOpen)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      {timeRange}
+                      <FiChevronDown
+                        size={12}
+                        className={`transition-transform duration-200 ${isTimeRangeDropdownOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
+
+                    {isTimeRangeDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 z-50 py-1">
+                        {["Last 7 Days", "Last Month", "Last 6 Months", "Last Year"].map((range) => (
+                          <button
+                            key={range}
+                            onClick={() => {
+                              setTimeRange(range);
+                              setIsTimeRangeDropdownOpen(false);
+                            }}
+                            className={`block w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-600 ${timeRange === range
+                              ? "text-indigo-600 dark:text-indigo-400"
+                              : "text-gray-600 dark:text-gray-300"
+                              }`}
+                          >
+                            {range}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mock Bar Chart using CSS */}
+                <div className="h-64 flex items-end justify-between gap-3 md:gap-6 pt-8 border-b border-gray-100 dark:border-gray-700/50 pb-2">
+                  {currentChartData.map((data, idx) => {
+                    const heightPercent = Math.max((data.value / maxChartValue) * 100, 5); // Ensure at least 5% height
+                    return (
+                      <div key={idx} className="w-full flex flex-col justify-end items-center gap-3 group h-full relative cursor-pointer">
+
+                        {/* Tooltip */}
+                        <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 bg-gray-800 dark:bg-white text-white dark:text-gray-800 text-xs font-bold py-1.5 px-3 rounded-lg pointer-events-none z-10 shadow-xl flex flex-col items-center">
+                          <span>{data.value} Units</span>
+                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-white rotate-45"></div>
+                        </div>
+
+                        <div className="w-full bg-indigo-50 dark:bg-indigo-500/10 rounded-t-lg overflow-hidden relative flex items-end group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors" style={{ height: '100%' }}>
+                          <div className="w-full bg-indigo-500 dark:bg-indigo-400 group-hover:bg-indigo-600 dark:group-hover:bg-indigo-300 transition-colors duration-300 rounded-t-lg shadow-sm" style={{ height: `${heightPercent}%` }}></div>
+                        </div>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold whitespace-nowrap">{data.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+
             </div>
           </div>
         ) : activeTab === "UserManagement" ? (
@@ -487,19 +593,17 @@ const AdminDashboard = () => {
           </div>
 
 
+        ) : activeTab === "Chats" ? (
+          <div className="flex-1 h-full overflow-y-auto no-scrollbar space-y-8">
+            <Chats />
+          </div>
         ) : activeTab === "Calendar" ? (
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
             <Calendar />
           </div>
         ) : activeTab === "Kanban" ? (
-
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
             <Kanban />
-          </div>
-        ) : activeTab === "OurTeams" ? (
-
-          <div className="flex-1 overflow-y-auto no-scrollbar space-y-8">
-            <OurTeams />
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto no-scrollbar animate-in slide-in-from-bottom-4 duration-500 pr-1 pb-8">
@@ -525,55 +629,57 @@ const AdminDashboard = () => {
         onUserCreated={() => setRefreshTrigger((prev) => prev + 1)}
       />
 
-      {isImportModalOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-          onClick={() => setIsImportModalOpen(false)}
-        >
+      {
+        isImportModalOpen && (
           <div
-            className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl space-y-6"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setIsImportModalOpen(false)}
           >
-            <h2 className="text-xl font-bold dark:text-white border-b border-gray-100 dark:border-gray-700 pb-4">
-              Import Users via CSV
-            </h2>
-            <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
-              <p>Your CSV file should contain the following headings:</p>
-              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl font-mono text-xs overflow-x-auto break-words leading-relaxed text-indigo-600 dark:text-indigo-400">
-                ID, Name, Username, Email, Role, Verified, Created At, Last Login, Created By
+            <div
+              className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-xl font-bold dark:text-white border-b border-gray-100 dark:border-gray-700 pb-4">
+                Import Users via CSV
+              </h2>
+              <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
+                <p>Your CSV file should contain the following headings:</p>
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl font-mono text-xs overflow-x-auto break-words leading-relaxed text-indigo-600 dark:text-indigo-400">
+                  ID, Name, Username, Email, Role, Verified, Created At, Last Login, Created By
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Please make sure the columns match exactly to avoid any import errors.
+                </p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Please make sure the columns match exactly to avoid any import errors.
-              </p>
-            </div>
 
-            <input type="file" id="csvInputModal" accept=".csv" className="hidden" onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                console.log("Selected file:", file);
-                // parshing the csv here
-                setIsImportModalOpen(false);
-              }
-            }} />
+              <input type="file" id="csvInputModal" accept=".csv" className="hidden" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  console.log("Selected file:", file);
+                  // parshing the csv here
+                  setIsImportModalOpen(false);
+                }
+              }} />
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <button
-                onClick={() => setIsImportModalOpen(false)}
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => document.getElementById("csvInputModal")?.click()}
-                className="flex-1 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-sm transition-all"
-              >
-                Select File to Import
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => document.getElementById("csvInputModal")?.click()}
+                  className="flex-1 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-sm transition-all"
+                >
+                  Select File to Import
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </DashboardLayout>
+        )
+      }
+    </DashboardLayout >
   );
 };
 

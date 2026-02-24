@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../api/axios";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import LightRays from "../components/LightRays";
 import ThemeComponent from "../components/ThemeComponent";
-import { FaGoogle, FaFacebook, FaTwitter } from "react-icons/fa";
+import { FaGoogle, FaGithub } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useToast } from "../components/ToastProvider";
 import { useNotifications } from "../context/NotificationContext";
@@ -24,20 +24,24 @@ const Login = () => {
 
   const navigate = useNavigate();
 
+  const socialAuthProcessed = React.useRef(false);
+
   // Social Login Callback Handler
   useEffect(() => {
+    if (socialAuthProcessed.current) return;
+
     const queryParams = new URLSearchParams(window.location.search);
     const token = queryParams.get("token");
     const role = queryParams.get("role");
     const error = queryParams.get("error");
 
     if (token) {
-      if (rememberMe) { 
+      socialAuthProcessed.current = true;
+      if (rememberMe) {
         localStorage.setItem("token", token);
         if (role) localStorage.setItem("role", role);
         localStorage.setItem("last_user", "Social User"); // Placeholder
       } else {
-        // Default to localStorage for social auth to prevent session loss on tab close immediately if users expect persistence
         localStorage.setItem("token", token);
         if (role) localStorage.setItem("role", role);
         localStorage.setItem("last_user", "Social User");
@@ -52,10 +56,15 @@ const Login = () => {
 
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
-      navigate("/dashboard");
+
+      // Navigate on next tick to ensure toast context properly renders without interruption
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 100);
     }
 
     if (error) {
+      socialAuthProcessed.current = true;
       alert(error);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -350,7 +359,7 @@ const Login = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => handleSocialLogin("google")}
@@ -361,19 +370,11 @@ const Login = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleSocialLogin("facebook")}
+                  onClick={() => handleSocialLogin("github")}
                   className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group cursor-pointer"
-                  title="Facebook"
+                  title="GitHub"
                 >
-                  <FaFacebook className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 transition-colors" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSocialLogin("twitter")}
-                  className="flex items-center justify-center py-3 px-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group cursor-pointer"
-                  title="Twitter"
-                >
-                  <FaTwitter className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-sky-500 transition-colors" />
+                  <FaGithub className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
                 </button>
               </div>
             </form>

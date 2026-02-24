@@ -24,10 +24,8 @@ import {
 import {
   googleAuth,
   googleCallback,
-  facebookAuth,
-  facebookCallback,
-  twitterAuth,
-  twitterCallback,
+  githubAuth,
+  githubCallback,
 } from "../controllers/socialAuthController.js";
 import {
   authToken,
@@ -36,6 +34,24 @@ import {
   authEditor,
 } from "../middleware/auth.js";
 const router = express.Router();
+
+router.get("/", (req, res) => {
+  res.json({
+    message: "Auth API is running",
+    endpoints: [
+      "POST /signup",
+      "POST /login",
+      "POST /verify-otp",
+      "POST /resend-otp",
+      "POST /logout",
+      "POST /forgot-password",
+      "POST /reset-password/:token",
+      "GET /profile",
+      "GET /google",
+      "GET /github",
+    ],
+  });
+});
 
 router.post("/signup", signup);
 router.post("/verify-otp", verifyOtp);
@@ -50,10 +66,8 @@ router.put("/profile", authToken, updateProfile);
 // Social Login Routes
 router.get("/google", googleAuth);
 router.get("/google/callback", googleCallback);
-router.get("/facebook", facebookAuth);
-router.get("/facebook/callback", facebookCallback);
-router.get("/twitter", twitterAuth);
-router.get("/twitter/callback", twitterCallback);
+router.get("/github", githubAuth);
+router.get("/github/callback", githubCallback);
 
 // Admin Routes (Hierarchical Access)
 router.get("/admin/stats", authToken, authAuthor, getAdminStats); // Admin & Author

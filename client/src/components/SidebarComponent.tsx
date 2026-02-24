@@ -26,7 +26,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
     >
         <div className="w-6 flex items-center justify-center shrink-0">
             <div
-                className={`transition-transform duration-300 ${active ? "scale-110" : "group-hover:scale-110"}`}
+                className={`transition-transform duration-300 ${active ? "scale-150" : "group-hover:scale-150"}`}
             >
                 {icon}
             </div>
@@ -106,15 +106,13 @@ const SidebarComponent: React.FC<SidebarComponentProps> = ({
                 className={`hidden lg:flex flex-col bg-white dark:bg-gray-800 transition-all duration-500 ease-in-out z-40 relative ${isSidebarOpen ? "w-60" : "w-24"
                     }`}
             >
-                {/* Custom Border Line */}
-                <div className="absolute top-0 right-0 h-full w-px bg-gray-200 dark:bg-gray-700 z-10"></div>
 
                 {/* Curved Cut / Mask for Button - Hides the straight line behind button */}
                 <div className="absolute -right-[1px] top-8 w-6 h-9 bg-white dark:bg-gray-800 z-20"></div>
                 {/* Floating Toggle Button */}
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    className={`absolute -right-3 top-8 w-8 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.15)] z-[60] text-gray-400 hover:text-emerald-500 transition-all duration-300 group`}
+                    className={`absolute -right-3 top-7.5 w-7 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.15)] z-[60] text-gray-400 hover:text-emerald-500 transition-all duration-300 group`}
                 >
                     <FiChevronLeft
                         className={`w-10 h-7 transition-transform duration-500 ${!isSidebarOpen && "rotate-180"}`}
