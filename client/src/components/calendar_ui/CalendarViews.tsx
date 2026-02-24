@@ -666,7 +666,7 @@ export const CalendarWeekView = () => {
                     >
                         <span className={cn(
                             "text-[10px] font-black lowercase tracking-[0.2em] transition-colors",
-                            [0, 6].includes(i) ? "text-red-500/50" : "text-gray-400 dark:text-gray-500"
+                            [0, 6].includes(i) ? "text-red-500/50" : "text-emerald-500/80"
                         )}>
                             {format(d, i === 3 ? 'EEE' : 'EEEEEE', { locale }).toLowerCase()}
                         </span>
@@ -750,7 +750,7 @@ export const CalendarMonthView = () => {
             <DateRangeContextMenu menu={contextMenu} onClose={() => setContextMenu(null)} />
             <DateHoverTooltip hover={dateHover.hover} ranges={ranges} isLocked={!!dateHover.lockedDate} />
 
-            <div className="grid grid-cols-7 gap-px sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
+            <div className="grid grid-cols-7 sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
                 {weekDays.map((day, i) => (
                     <div
                         key={day}
@@ -758,7 +758,7 @@ export const CalendarMonthView = () => {
                     >
                         <span className={cn(
                             "text-[10px] font-black lowercase tracking-[0.3em] transition-colors",
-                            [0, 6].includes(i) ? "text-red-500/50" : "text-gray-400 dark:text-gray-500"
+                            [0, 6].includes(i) ? "text-red-500/50" : "text-emerald-500/80"
                         )}>
                             {day.toLowerCase()}
                         </span>
@@ -766,7 +766,7 @@ export const CalendarMonthView = () => {
                 ))}
             </div>
 
-            <div className="grid overflow-hidden -mt-px flex-1 auto-rows-fr p-px grid-cols-7 gap-px">
+            <div className="grid flex-1 auto-rows-fr grid-cols-7 overflow-y-auto no-scrollbar min-h-0">
                 {monthDates.map((_date) => {
                     const currentEvents = events.filter((ev) => isSameDay(ev.start, _date));
                     const rangeInfo = getRangeInfo(_date);
@@ -794,7 +794,7 @@ export const CalendarMonthView = () => {
                             onMouseMove={dateHover.handleMouseMove}
                             onMouseLeave={dateHover.handleMouseLeave}
                             className={cn(
-                                'ring-1 p-1 md:p-2 text-sm text-muted-foreground ring-border overflow-auto cursor-pointer transition-colors relative select-none min-h-[60px] md:min-h-[100px]',
+                                'p-1 md:p-2 text-sm border-r border-b border-gray-200/50 dark:border-gray-800/50 text-muted-foreground overflow-y-auto overflow-x-hidden no-scrollbar cursor-pointer transition-colors relative select-none min-h-[80px]',
                                 !isSameMonth(date, _date) && 'text-muted-foreground/50',
                                 isSameDay(date, _date) && !inRange && 'bg-muted/10',
                                 !inRange && 'hover:bg-muted/50',
@@ -959,7 +959,7 @@ export const CalendarYearView = () => {
                             >
                                 <span className={cn(
                                     "text-[9px] font-black lowercase tracking-widest transition-colors",
-                                    [0, 6].includes(i) ? "text-red-500/40" : "text-gray-400 dark:text-gray-500"
+                                    [0, 6].includes(i) ? "text-red-500/40" : "text-emerald-500/70"
                                 )}>
                                     {day}
                                 </span>

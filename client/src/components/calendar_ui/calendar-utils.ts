@@ -24,8 +24,15 @@ export const getDaysInMonth = (date: Date) => {
     let currentDate = startOfWeekForMonth;
     const calendar: Date[] = [];
     
-    // Generate all days from the start of the first week to the end of the last week of the month
+    // Generate dates based on the natural weeks required for the month
     while (isBefore(currentDate, endOfWeekForMonth) || isSameDay(currentDate, endOfWeekForMonth)) {
+        calendar.push(new Date(currentDate));
+        currentDate = addDays(currentDate, 1);
+    }
+
+    // Ensure we always show at least 5 rows (35 days) so next-month dates are visible in Feb too.
+    // This also removes the "extra" 6th row if it's not strictly needed for the current month.
+    while (calendar.length < 35) {
         calendar.push(new Date(currentDate));
         currentDate = addDays(currentDate, 1);
     }
