@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useNotifications } from "../context/NotificationContext";
+import { logActivity } from "../utils/activityLogger";
 
 interface NotificationCenterProps {
   onClose?: () => void;
@@ -44,7 +45,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
         {notifications.length > 0 && (
           <button
-            onClick={clearAll}
+            onClick={() => {
+              clearAll();
+              logActivity("DELETE", "Notifications", "Cleared all notifications");
+            }}
             className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
           >
             Clear All
@@ -83,6 +87,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
                   onClick={(e) => {
                     e.stopPropagation();
                     removeNotification(notif.id);
+                    logActivity("DELETE", "Notifications", `Dismissed notification: ${notif.title}`);
                   }}
                   className="absolute right-4 top-8 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full transition-all"
                   aria-label="Remove notification"

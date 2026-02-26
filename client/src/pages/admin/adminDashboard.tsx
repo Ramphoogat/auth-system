@@ -27,6 +27,7 @@ import Kanban from "../../components/Kanban";
 import Calendar from "../../components/calendar_ui/Calendar";
 import Chats from "../../components/Chats";
 import { useToast } from "../../components/ToastProvider";
+import { logActivity } from "../../utils/activityLogger";
 
 
 import { useDashboardSlug } from "../../components/url_slug";
@@ -158,6 +159,7 @@ const AdminDashboard = () => {
       setIsLoading(true);
       await Promise.all(selectedUsers.map(id => api.delete(`/auth/admin/users/${id}`)));
       showSuccess(`Deleted ${selectedUsers.length} users`);
+      logActivity("DELETE", "Management", `Deleted ${selectedUsers.length} users`);
       setRefreshTrigger(p => p + 1);
       setSelectedUsers([]);
     } catch (error) {
@@ -378,6 +380,7 @@ const AdminDashboard = () => {
                             onClick={() => {
                               setTimeRange(range);
                               setIsTimeRangeDropdownOpen(false);
+                              logActivity("UPDATE", "Overview", `Changed time range to ${range}`);
                             }}
                             className={`block w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-600 ${timeRange === range
                               ? "text-indigo-600 dark:text-indigo-400"
@@ -440,7 +443,10 @@ const AdminDashboard = () => {
 
                 {/*Import CSV Button*/}
                 <button
-                  onClick={() => setIsImportModalOpen(true)}
+                  onClick={() => {
+                    setIsImportModalOpen(true);
+                    logActivity("UPDATE", "Management", "Opened Import CSV modal");
+                  }}
                   className="flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg bg-gray-500 text-white hover:bg-emerald-400 transition-all shadow-sm"
                 >
                   Import CSV
@@ -449,6 +455,7 @@ const AdminDashboard = () => {
                 {/*Export CSV Button*/}
                 <button
                   onClick={() => {
+                    logActivity("UPDATE", "Management", "Exported users to CSV");
                     const csvContent = "data:text/csv;charset=utf-8," + ["ID, Name, Username, Email,Role, Verified, Created At, Last Login, Created By"].concat(users.map((u) => `${u.id || ''},${u.name || ''},${u.username || ''},${u.email || ''},${u.role || ''},${u.isVerified || ''},${u.createdAt || ''},${u.lastLogin || ''},${u.createdBy || ''}`)).join("\n");
                     const encodedUri = encodeURI(csvContent);
                     const link = document.createElement("a");
@@ -557,6 +564,7 @@ const AdminDashboard = () => {
                               ),
                             );
                             showSuccess("Role updated successfully");
+                            logActivity("UPDATE", "Management", `Updated role for user ${id} to ${role}`);
                           } catch {
                             showError("Failed to update role");
                           }

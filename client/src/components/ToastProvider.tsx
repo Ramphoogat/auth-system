@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import Toast, { type ToastType } from './Toast';
+import { logActivity } from '../utils/activityLogger';
 
 interface ToastData {
   id: string;
@@ -37,6 +38,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const showToast = useCallback((message: string, type: ToastType = 'info', duration = 3000) => {
     const id = `toast-${Date.now()}-${Math.random()}`;
     setToasts(prev => [...prev, { id, message, type, duration }]);
+
+    // Log the toast message into the system activity console
+    // Make sure we only log important actions to avoid infinite loops, but since logActivity
+    // inherently does not trigger a toast message unless there's an error, this is usually safe.
+    logActivity("INFO", "Notification", `Toast displayed: ${message}`);
   }, []);
 
   const showSuccess = useCallback((message: string, duration = 3000) => {
@@ -58,7 +64,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ showToast, showSuccess, showError, showInfo, showWarning }}>
       {children}
-      
+
       {/* Toast Container */}
       <div className="fixed top-24 right-8 z-[200] space-y-3 pointer-events-none">
         {toasts.map(toast => (

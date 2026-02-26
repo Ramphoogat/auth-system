@@ -23,7 +23,17 @@ export const fetchCalendarData = async (): Promise<CalendarPayload> => {
 
 /** Persist the full calendar state for this user. */
 export const saveCalendarData = async (payload: CalendarPayload): Promise<void> => {
-    await api.put('/calendar', payload);
+    // Format range dates as simple strings to avoid timezone shifts during JSON serialization
+    const formattedRanges = payload.ranges.map(r => ({
+        ...r,
+        start: r.start instanceof Date ? r.start.getFullYear() + '-' + String(r.start.getMonth() + 1).padStart(2, '0') + '-' + String(r.start.getDate()).padStart(2, '0') : r.start,
+        end:   r.end instanceof Date   ? r.end.getFullYear()   + '-' + String(r.end.getMonth() + 1).padStart(2, '0')   + '-' + String(r.end.getDate()).padStart(2, '0')   : r.end,
+    }));
+
+    await api.put('/calendar', {
+        ...payload,
+        ranges: formattedRanges
+    });
 };
 
 /** Sync with Google Calendar to fetch latest events */

@@ -50,7 +50,6 @@ const DateHoverTooltip = ({ hover, ranges, isLocked }: { hover: HoverState; rang
 
     const { events, rangeMatches } = hover;
     const hasContent = events.length > 0 || rangeMatches.length > 0;
-    if (!hasContent) return null;
 
     // Position tooltip — flip if near edges
     const tooltipW = 260, tooltipH = 200;
@@ -82,11 +81,13 @@ const DateHoverTooltip = ({ hover, ranges, isLocked }: { hover: HoverState; rang
                             </span>
                         )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 font-bold uppercase tracking-tighter opacity-70">
-                        {rangeMatches.length > 0 && `${rangeMatches.length} range${rangeMatches.length > 1 ? 's' : ''}`}
-                        {rangeMatches.length > 0 && events.length > 0 && ' · '}
-                        {events.length > 0 && `${events.length} event${events.length > 1 ? 's' : ''}`}
-                    </p>
+                    {hasContent && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5 font-bold uppercase tracking-tighter opacity-70">
+                            {rangeMatches.length > 0 && `${rangeMatches.length} range${rangeMatches.length > 1 ? 's' : ''}`}
+                            {rangeMatches.length > 0 && events.length > 0 && ' · '}
+                            {events.length > 0 && `${events.length} event${events.length > 1 ? 's' : ''}`}
+                        </p>
+                    )}
                 </div>
 
                 {isLocked && (
@@ -190,16 +191,48 @@ const DateHoverTooltip = ({ hover, ranges, isLocked }: { hover: HoverState; rang
                                 <div className={cn('shrink-0 size-2.5 rounded-full mt-1 border-2 border-white dark:border-gray-800 shadow-sm', monthEventVariants({ variant: event.color }))} />
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between gap-2">
-                                        <p className="text-[11px] font-black text-gray-900 dark:text-white truncate">{event.title}</p>
+                                        {isLocked ? (
+                                            <input
+                                                type="text"
+                                                defaultValue={event.title}
+                                                placeholder="Event Title"
+                                                className="bg-transparent border-none p-0 m-0 outline-none text-[11px] font-black text-gray-900 dark:text-white w-full focus:ring-1 focus:ring-primary/20 rounded px-0.5"
+                                                onBlur={(e) => {
+                                                    const newVal = e.target.value.trim();
+                                                    if (newVal && newVal !== event.title) {
+                                                        window.calendar_helpers?.updateEventTitle?.(event.id, newVal);
+                                                    }
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') e.currentTarget.blur();
+                                                }}
+                                            />
+                                        ) : (
+                                            <p className="text-[11px] font-black text-gray-900 dark:text-white truncate">{event.title}</p>
+                                        )}
                                         <span className="text-[9px] font-bold text-gray-400 tabular-nums shrink-0 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-md">
                                             {format(event.start, 'hh:mm a')}
                                         </span>
                                     </div>
 
-                                    {event.description && (
-                                        <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5 leading-relaxed font-medium">
-                                            {event.description}
-                                        </p>
+                                    {isLocked ? (
+                                        <textarea
+                                            defaultValue={event.description || ""}
+                                            placeholder="Add description..."
+                                            className="bg-transparent border-none p-1 m-0 outline-none text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-tight w-full resize-none min-h-[1.5rem] mt-0.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 focus:bg-gray-50 dark:focus:bg-gray-800/50 rounded transition-all"
+                                            onBlur={(e) => {
+                                                const newVal = e.target.value.trim();
+                                                if (newVal !== (event.description || "")) {
+                                                    window.calendar_helpers?.updateEventDescription?.(event.id, newVal);
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        event.description && (
+                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5 leading-relaxed font-medium">
+                                                {event.description}
+                                            </p>
+                                        )
                                     )}
 
                                     {event.tags && event.tags.length > 0 && (
@@ -343,7 +376,6 @@ const useDateHover = (events: CalendarEvent[]) => {
         if (lockedDate) return;
 
         const data = getHoverData(_date, rangeMatches);
-        if (data.events.length === 0 && data.rangeMatches.length === 0) return;
 
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {
@@ -540,18 +572,21 @@ export const EventGroup = ({
     hour,
     onMouseEnter,
     onMouseMove,
-    onMouseLeave
+    onMouseLeave,
+    onClick
 }: {
     events: CalendarEvent[];
     hour: Date;
     onMouseEnter?: (e: React.MouseEvent, event: CalendarEvent) => void;
     onMouseMove?: (e: React.MouseEvent) => void;
     onMouseLeave?: (e: React.MouseEvent) => void;
-}) => (
-    <div className="h-20 border-t last:border-b">
-        {events
-            .filter((event) => isSameHour(event.start, hour))
-            .map((event) => {
+    onClick?: (e: React.MouseEvent, event: CalendarEvent) => void;
+}) => {
+    const hourEvents = events.filter((event) => isSameHour(event.start, hour));
+
+    return (
+        <div className="h-20 border-t last:border-b relative border-border/50 group/hour hover:bg-muted/10 transition-colors">
+            {hourEvents.map((event) => {
                 let hoursDifference = differenceInMinutes(event.end, event.start) / 60;
                 const startPosition = event.start.getMinutes() / 60;
 
@@ -561,31 +596,71 @@ export const EventGroup = ({
                     hoursDifference = remainingHoursInDay;
                 }
 
+                // Very basic overlap calculation for current hour events
+                const overlappingEvents = hourEvents.filter(e => {
+                    return (e.start.getTime() < event.end.getTime() && e.end.getTime() > event.start.getTime());
+                });
+                // Sort overlapping events to get consistent index
+                overlappingEvents.sort((a, b) => a.start.getTime() - b.start.getTime() || a.id.localeCompare(b.id));
+                const overlapIndex = overlappingEvents.findIndex((e) => e.id === event.id);
+                const overlapCount = overlappingEvents.length;
+
+                const leftPercent = overlapCount > 1 ? (overlapIndex * (100 / overlapCount)) : 0;
+                const widthPercent = overlapCount > 1 ? (100 / overlapCount) : 100;
+
                 return (
                     <div
                         key={event.id}
                         onMouseEnter={(e) => onMouseEnter?.(e, event)}
                         onMouseMove={onMouseMove}
                         onMouseLeave={onMouseLeave}
-                        className={cn('relative max-w-full truncate cursor-help group/event-chip', dayEventVariants({ variant: event.color }))}
-                        style={{ top: `${startPosition * 100}%`, height: `${hoursDifference * 100}%` }}
+                        onClick={(e) => onClick?.(e, event)}
+                        className={cn(
+                            'absolute rounded-md cursor-help group/event-chip shadow-sm border border-black/5 dark:border-white/5 transition-all hover:z-50 hover:shadow-md hover:brightness-110',
+                            dayEventVariants({ variant: event.color })
+                        )}
+                        style={{
+                            top: `calc(${startPosition * 100}% + 1px)`,
+                            minHeight: `calc(max(24px, ${hoursDifference * 100}%) - 2px)`,
+                            left: `calc(${leftPercent}% + 2px)`,
+                            width: `calc(${widthPercent}% - 4px)`,
+                            zIndex: 10 + overlapIndex
+                        }}
                     >
-                        <div className="px-2 py-1">
-                            <p className="text-[10px] font-black leading-tight truncate">{event.title}</p>
-                            {hoursDifference > 0.5 && event.description && (
-                                <p className="text-[9px] opacity-70 truncate font-medium">{event.description}</p>
+                        <div className="p-1.5 flex flex-col gap-0.5 relative z-10">
+                            <p className="text-[10px] md:text-[11px] font-black leading-tight break-words">{event.title}</p>
+
+                            {event.description && (
+                                <p className="text-[9px] md:text-[10px] opacity-90 font-medium break-words leading-snug">{event.description}</p>
+                            )}
+
+                            {event.tags && event.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                    {event.tags.map((tag, idx) => (
+                                        <span key={idx} className="text-[8px] font-black uppercase tracking-tighter bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded-sm">
+                                            #{tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            {event.creator && (
+                                <div className="flex items-center gap-1 mt-0.5 opacity-80">
+                                    <span className="text-[8px] font-bold">Created by: {event.creator}</span>
+                                </div>
                             )}
                         </div>
                     </div>
                 );
             })}
-    </div>
-);
+        </div>
+    );
+};
 
 // ─── Day View ─────────────────────────────────────────────────────────────────
 
 export const CalendarDayView = () => {
-    const { view, events, date, setSelectedDateForEvent, setIsEventModalOpen, ranges, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription } = useCalendar();
+    const { view, events, date, setSelectedDateForEvent, setIsEventModalOpen, setSelectedEventForEdit, ranges, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, updateEventTitle, updateEventDescription } = useCalendar();
     const dateHover = useDateHover(events);
 
     useEffect(() => {
@@ -593,9 +668,10 @@ export const CalendarDayView = () => {
             setSelectedDateForEvent, setIsEventModalOpen,
             draftStart, setDraftStart, addRange,
             renameRange, updateRangeDescription,
+            updateEventTitle, updateEventDescription,
             toggleLock: dateHover.toggleLock
         };
-    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, dateHover.toggleLock]);
+    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, updateEventTitle, updateEventDescription, dateHover.toggleLock]);
 
     if (view !== 'day') return null;
     const hours = [...Array(24)].map((_, i) => setHours(date, i));
@@ -618,6 +694,12 @@ export const CalendarDayView = () => {
                         onMouseEnter={dateHover.handleEventMouseEnter}
                         onMouseMove={dateHover.handleMouseMove}
                         onMouseLeave={dateHover.handleMouseLeave}
+                        onClick={(e, event) => {
+                            e.stopPropagation();
+                            setSelectedDateForEvent(event.start);
+                            setSelectedEventForEdit(event);
+                            setIsEventModalOpen(true);
+                        }}
                     />
                 ))}
             </div>
@@ -628,7 +710,7 @@ export const CalendarDayView = () => {
 // ─── Week View ────────────────────────────────────────────────────────────────
 
 export const CalendarWeekView = () => {
-    const { view, date, locale, events, setSelectedDateForEvent, setIsEventModalOpen, ranges, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription } = useCalendar();
+    const { view, date, locale, events, setSelectedDateForEvent, setIsEventModalOpen, setSelectedEventForEdit, ranges, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, updateEventTitle, updateEventDescription } = useCalendar();
     const dateHover = useDateHover(events);
 
     useEffect(() => {
@@ -636,9 +718,10 @@ export const CalendarWeekView = () => {
             setSelectedDateForEvent, setIsEventModalOpen,
             draftStart, setDraftStart, addRange,
             renameRange, updateRangeDescription,
+            updateEventTitle, updateEventDescription,
             toggleLock: dateHover.toggleLock
         };
-    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, dateHover.toggleLock]);
+    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, updateEventTitle, updateEventDescription, dateHover.toggleLock]);
 
     const weekDates = useMemo(() => {
         const start = startOfWeek(date, { weekStartsOn: 0 });
@@ -701,6 +784,12 @@ export const CalendarWeekView = () => {
                                     onMouseEnter={dateHover.handleEventMouseEnter}
                                     onMouseMove={dateHover.handleMouseMove}
                                     onMouseLeave={dateHover.handleMouseLeave}
+                                    onClick={(e, event) => {
+                                        e.stopPropagation();
+                                        setSelectedDateForEvent(event.start);
+                                        setSelectedEventForEdit(event);
+                                        setIsEventModalOpen(true);
+                                    }}
                                 />
                             ))}
                         </div>
@@ -714,7 +803,7 @@ export const CalendarWeekView = () => {
 // ─── Month View ───────────────────────────────────────────────────────────────
 
 export const CalendarMonthView = () => {
-    const { date, setDate, view, events, locale, setSelectedDateForEvent, setIsEventModalOpen, deleteEvent, setSelectedEventForEdit, ranges, readOnly, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription } = useCalendar();
+    const { date, setDate, view, events, locale, setSelectedDateForEvent, setIsEventModalOpen, deleteEvent, setSelectedEventForEdit, ranges, readOnly, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, updateEventTitle, updateEventDescription } = useCalendar();
     const { showError } = useToast();
     const { getRangeInfo, isDraftStart } = useRangeHelpers();
     const dateHover = useDateHover(events);
@@ -724,9 +813,10 @@ export const CalendarMonthView = () => {
             setSelectedDateForEvent, setIsEventModalOpen,
             draftStart, setDraftStart, addRange,
             renameRange, updateRangeDescription,
+            updateEventTitle, updateEventDescription,
             toggleLock: dateHover.toggleLock
         };
-    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, dateHover.toggleLock]);
+    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, updateEventTitle, updateEventDescription, dateHover.toggleLock]);
 
     const monthDates = useMemo(() => getDaysInMonth(date), [date]);
     const weekDays = useMemo(() => generateWeekdays(locale), [locale]);
@@ -750,7 +840,7 @@ export const CalendarMonthView = () => {
             <DateRangeContextMenu menu={contextMenu} onClose={() => setContextMenu(null)} />
             <DateHoverTooltip hover={dateHover.hover} ranges={ranges} isLocked={!!dateHover.lockedDate} />
 
-            <div className="grid grid-cols-7 sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
+            <div className="grid grid-cols-7 sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-gray-200/50 dark:border-gray-800/50">
                 {weekDays.map((day, i) => (
                     <div
                         key={day}
@@ -758,7 +848,7 @@ export const CalendarMonthView = () => {
                     >
                         <span className={cn(
                             "text-[10px] font-black lowercase tracking-[0.3em] transition-colors",
-                            [0, 6].includes(i) ? "text-red-500/50" : "text-emerald-500/80"
+                            [0, 6].includes(i) ? "text-red-500" : "text-emerald-500"
                         )}>
                             {day.toLowerCase()}
                         </span>
@@ -794,23 +884,28 @@ export const CalendarMonthView = () => {
                             onMouseMove={dateHover.handleMouseMove}
                             onMouseLeave={dateHover.handleMouseLeave}
                             className={cn(
-                                'p-1 md:p-2 text-sm border-r border-b border-gray-200/50 dark:border-gray-800/50 text-muted-foreground overflow-y-auto overflow-x-hidden no-scrollbar cursor-pointer transition-colors relative select-none min-h-[80px]',
+                                'p-1 md:p-2 text-sm border-r border-b border-gray-200 dark:border-gray-800 text-muted-foreground overflow-y-auto overflow-x-hidden no-scrollbar cursor-pointer transition-all duration-300 relative select-none min-h-[80px]',
+                                'group hover:z-30 hover:-translate-y-1.5 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] hover:bg-white dark:hover:bg-gray-800 hover:border-transparent hover:rounded-2xl',
                                 !isSameMonth(date, _date) && 'text-muted-foreground/50',
                                 isSameDay(date, _date) && !inRange && 'bg-muted/10',
-                                !inRange && 'hover:bg-muted/50',
-                                'flex flex-col gap-1'
+                                'flex flex-col gap-1',
+                                (toShowRanges.length === 0 && toShowEvents.length === 0) ? 'justify-center' : 'justify-start'
                             )}
                         >
                             {/* Date number */}
-                            <div className="flex items-center justify-center mb-1 relative">
+                            <div className={cn("flex items-center justify-center relative transition-transform duration-300 group-hover:-translate-y-1", (toShowRanges.length > 0 || toShowEvents.length > 0) ? "mb-1" : "")}>
                                 <span
                                     className={cn(
-                                        "size-6 grid place-items-center rounded-full transition-colors font-medium text-xs z-10",
+                                        "h-6 min-w-[24px] flex items-center justify-center px-1 rounded-full transition-all duration-300 font-medium text-xs z-10",
+                                        "group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-md group-hover:scale-110",
                                         isToday(_date) ? "bg-primary text-primary-foreground" :
                                             isSameDay(date, _date) ? "bg-primary/20 text-primary" : ""
                                     )}
                                 >
-                                    {format(_date, 'd')}
+                                    <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:mr-1 overflow-hidden transition-all duration-300 font-bold block">
+                                        {format(_date, 'MMM')}
+                                    </span>
+                                    <span>{format(_date, 'd')}</span>
                                 </span>
                                 {draft && (
                                     <span className="absolute right-0 text-[8px] text-emerald-500 font-bold animate-pulse">SET END</span>
@@ -818,36 +913,48 @@ export const CalendarMonthView = () => {
                             </div>
 
                             {/* Range Bars (Google Calendar Style) */}
-                            <div className="flex flex-col gap-0.5 mb-1 min-h-[4px]">
-                                {toShowRanges.map((m) => {
-                                    const r = ranges[m.rangeIndex];
-                                    if (!r) return null;
-                                    const s = getRangeStyle(m.colorIndex ?? m.rangeIndex);
-                                    const showLabel = m.isStart || m.isFirstInWeek;
+                            {toShowRanges.length > 0 && (
+                                <div className="flex flex-col gap-0.5 mb-1 min-h-[4px]">
+                                    {toShowRanges.map((m) => {
+                                        const r = ranges[m.rangeIndex];
+                                        if (!r) return null;
+                                        const s = getRangeStyle(m.colorIndex ?? m.rangeIndex);
+                                        const showLabel = m.isStart || m.isFirstInWeek;
 
-                                    return (
-                                        <div
-                                            key={r.id}
-                                            onMouseEnter={(e) => { e.stopPropagation(); dateHover.handleRangeMouseEnter(e, r, m.rangeIndex); }}
-                                            onMouseMove={dateHover.handleMouseMove}
-                                            onMouseLeave={dateHover.handleMouseLeave}
-                                            className={cn(
-                                                "h-1.5 md:h-3 flex items-center px-1 md:px-1.5 text-[8px] md:text-[10px] font-bold text-white transition-all shadow-sm cursor-help",
-                                                m.isStart && "rounded-l-md ml-1",
-                                                m.isEnd && "rounded-r-md mr-1",
-                                                !m.isStart && !m.isEnd && "mx-0"
-                                            )}
-                                            style={{ backgroundColor: s.capBg }}
-                                        >
-                                            {showLabel && (
-                                                <span className="truncate drop-shadow-sm hidden md:block">
-                                                    {r.label || `Range #${m.rangeIndex + 1}`}
-                                                </span>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                        return (
+                                            <div
+                                                key={r.id}
+                                                onMouseEnter={(e) => { e.stopPropagation(); dateHover.handleRangeMouseEnter(e, r, m.rangeIndex); }}
+                                                onMouseMove={dateHover.handleMouseMove}
+                                                onMouseLeave={dateHover.handleMouseLeave}
+                                                className={cn(
+                                                    "flex items-center transition-all cursor-help",
+                                                    m.isStart && "ml-1",
+                                                    m.isEnd && "mr-1",
+                                                    !m.isStart && !m.isEnd && "mx-0"
+                                                )}
+                                            >
+                                                {m.isStart && <div className="w-[3px] h-3 md:h-4 rounded-full shrink-0" style={{ backgroundColor: s.capBg }} />}
+                                                <div
+                                                    className={cn(
+                                                        "h-1.5 md:h-3 flex items-center flex-1 px-1 md:px-1.5 text-[8px] md:text-[10px] font-bold text-white shadow-sm",
+                                                        m.isStart && "rounded-l-sm ml-[1px]",
+                                                        m.isEnd && "rounded-r-sm mr-[1px]",
+                                                    )}
+                                                    style={{ backgroundColor: s.capBg }}
+                                                >
+                                                    {showLabel && (
+                                                        <span className="truncate drop-shadow-sm hidden md:block">
+                                                            {r.label || `Range #${m.rangeIndex + 1}`}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {m.isEnd && <div className="w-[3px] h-3 md:h-4 rounded-full shrink-0" style={{ backgroundColor: s.capBg }} />}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
 
                             {toShowEvents.map((event) => (
                                 <div
@@ -906,7 +1013,7 @@ export const CalendarMonthView = () => {
 // ─── Year View ────────────────────────────────────────────────────────────────
 
 export const CalendarYearView = () => {
-    const { date, setDate, view, events, locale, setSelectedDateForEvent, setIsEventModalOpen, ranges, readOnly, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription } = useCalendar();
+    const { date, setDate, view, events, locale, setSelectedDateForEvent, setIsEventModalOpen, ranges, readOnly, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, updateEventTitle, updateEventDescription } = useCalendar();
     const { getRangeInfo } = useRangeHelpers();
     const dateHover = useDateHover(events);
 
@@ -915,9 +1022,10 @@ export const CalendarYearView = () => {
             setSelectedDateForEvent, setIsEventModalOpen,
             draftStart, setDraftStart, addRange,
             renameRange, updateRangeDescription,
+            updateEventTitle, updateEventDescription,
             toggleLock: dateHover.toggleLock
         };
-    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, dateHover.toggleLock]);
+    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, updateEventTitle, updateEventDescription, dateHover.toggleLock]);
 
     const months = useMemo(() => {
         if (!view) return [];
@@ -978,6 +1086,7 @@ export const CalendarYearView = () => {
                             return (
                                 <div
                                     key={_date.toString()}
+                                    title={format(_date, 'PPPP')}
                                     onContextMenu={(e) => handleContextMenu(e, _date)}
                                     onMouseEnter={belongsHere ? (e) => dateHover.handleMouseEnter(e, _date, matches) : undefined}
                                     onMouseMove={belongsHere ? dateHover.handleMouseMove : undefined}
@@ -1008,12 +1117,15 @@ export const CalendarYearView = () => {
                                                     <div
                                                         key={m.rangeIndex}
                                                         className={cn(
-                                                            "h-0.5 w-full rounded-full transition-all",
-                                                            m.isStart && "ml-0.5",
-                                                            m.isEnd && "mr-0.5"
+                                                            "flex items-center w-full transition-all",
+                                                            m.isStart && "pl-0.5",
+                                                            m.isEnd && "pr-0.5"
                                                         )}
-                                                        style={{ backgroundColor: s.capBg }}
-                                                    />
+                                                    >
+                                                        {m.isStart && <div className="w-[2px] h-1.5 rounded-full" style={{ backgroundColor: s.capBg }} />}
+                                                        <div className="h-0.5 flex-1" style={{ backgroundColor: s.capBg }} />
+                                                        {m.isEnd && <div className="w-[2px] h-1.5 rounded-full" style={{ backgroundColor: s.capBg }} />}
+                                                    </div>
                                                 );
                                             })}
                                         </div>

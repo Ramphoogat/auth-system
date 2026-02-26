@@ -3,6 +3,7 @@ import { FiFileText } from "react-icons/fi";
 import api from "../api/axios";
 import { useToast } from "./ToastProvider";
 import { AxiosError } from "axios";
+import { logActivity } from "../utils/activityLogger";
 
 const FormSection: React.FC = () => {
     const { showSuccess, showError } = useToast();
@@ -47,6 +48,7 @@ const FormSection: React.FC = () => {
                 description: description
             });
             showSuccess("Role request submitted successfully!");
+            logActivity("CREATE", "Form", `Submitted role request for ${role}`);
             setDescription("");
             setRole("");
         } catch (err: unknown) {

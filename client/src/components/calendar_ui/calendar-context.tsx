@@ -82,6 +82,8 @@ type ContextType = {
     deleteEvent: (id: string) => void;
     clearAllEvents: () => void;
     undoDelete: () => void;
+    updateEventTitle: (id: string, title: string) => void;
+    updateEventDescription: (id: string, description: string) => void;
     // Multi-range support
     ranges: DateRange[];
     draftStart: Date | null;

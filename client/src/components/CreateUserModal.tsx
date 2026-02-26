@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FiX, FiUser, FiMail, FiLock, FiPlus, FiShield } from "react-icons/fi";
 import api from "../api/axios";
 import { useToast } from "../components/ToastProvider";
+import { logActivity } from "../utils/activityLogger";
 
 interface CreateUserModalProps {
     isOpen: boolean;
@@ -38,6 +39,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
             await api.post("/auth/admin/users", formData);
 
             showSuccess("User created successfully!");
+            logActivity("CREATE", "Management", `Created new user: ${formData.username} (${formData.role})`);
             setFormData({
                 unique_id: "",
                 name: "",

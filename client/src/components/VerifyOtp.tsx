@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import LightRays from './LightRays';
 import ThemeComponent from './ThemeComponent';
 import { useToast } from './ToastProvider';
+import { logActivity } from '../utils/activityLogger';
 
 const VerifyOtp: React.FC = () => {
     const [otp, setOtp] = useState('');
@@ -32,6 +33,7 @@ const VerifyOtp: React.FC = () => {
 
             // Redirect based on the verified role - all now use unified /dashboard
             showSuccess("Logged in successfully!");
+            logActivity("UPDATE", "Security", `Verified OTP for ${email}`);
             navigate('/dashboard');
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
@@ -49,6 +51,7 @@ const VerifyOtp: React.FC = () => {
             const payload = { email };
             await api.post('/auth/resend-otp', payload);
             alert('OTP resent successfully!');
+            logActivity("UPDATE", "Security", `Resent OTP for ${email}`);
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
                 alert(error.response?.data?.message || 'Failed to resend OTP');

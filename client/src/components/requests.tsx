@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FiCheck, FiX, FiUser, FiClock } from 'react-icons/fi';
 import api from '../api/axios';
 import { useToast } from './ToastProvider';
+import { logActivity } from '../utils/activityLogger';
 
 interface IRequest {
     _id: string; // Changed from id to _id to match MongoDB
@@ -28,6 +29,7 @@ const Requests: React.FC = () => {
             await api.put(`/auth/role-requests/${id}/approve`, { userId, role: requestedRole });
             setRequests(prev => prev.map(req => req._id === id ? { ...req, status: 'approved' } : req));
             showSuccess("Request approved successfully");
+            logActivity("UPDATE", "Requests", `Approved role request: ${requestedRole} for user ${userId}`);
         } catch (error) {
             console.error("Failed to approve request", error);
             showError("Failed to approve request");
@@ -39,6 +41,7 @@ const Requests: React.FC = () => {
             await api.put(`/auth/role-requests/${id}/reject`);
             setRequests(prev => prev.map(req => req._id === id ? { ...req, status: 'rejected' } : req));
             showSuccess("Request rejected");
+            logActivity("UPDATE", "Requests", `Rejected role request ${id}`);
         } catch (error) {
             console.error("Failed to reject request", error);
             showError("Failed to reject request");

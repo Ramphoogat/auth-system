@@ -9,6 +9,7 @@ import authRoutes from "./src/routes/authRoutes.js";
 import settingsRoutes from "./src/routes/settings.js";
 import sheetRoutes from "./src/routes/sheetRoutes.js";
 import calendarRoutes from "./src/routes/calendarRoutes.js";
+import activityRoutes from "./src/routes/activityRoutes.js";
 import { performSheetSync } from "./src/controllers/sheetController.js";
 
 const app = express();
@@ -36,6 +37,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/sheets", sheetRoutes);
 app.use("/api/calendar", calendarRoutes);
+app.use("/api/activity", activityRoutes);
 
 app.get("/api", (req, res) => {
   res.json({
@@ -44,7 +46,8 @@ app.get("/api", (req, res) => {
       "/api/auth",
       "/api/settings",
       "/api/sheets",
-      "/api/calendar"
+      "/api/calendar",
+      "/api/activity"
     ]
   });
 });

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useCalendar, type CalendarEvent } from './calendar-context';
 import { useToast } from '../ToastProvider';
 import { RANGE_COLORS, getRangeStyle } from './calendar-utils';
+import { logActivity } from '../../utils/activityLogger';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const colorDotClass: Record<string, string> = {
@@ -28,7 +29,7 @@ export const TasksPanelTrigger = () => {
                 "group relative flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300",
                 "bg-white/50 dark:bg-gray-800/50 backdrop-blur-md border-gray-200 dark:border-gray-700",
                 "hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10",
-                isTasksPanelOpen ? "border-blue-500 ring-2 ring-blue-500/20 shadow-lg shadow-blue-500/10 text-blue-600 dark:text-blue-400" : "text-gray-600 dark:text-gray-400"
+                isTasksPanelOpen ? "border-blue-500 ring-2 ring-blue-500/20 shadow-lg shadow-blue-500/10 text-blue-600 dark:text-blue-400" : "text-blue-600 dark:text-blue-400"
             )}
         >
             <FiList className={cn("w-4 h-4 transition-transform group-hover:scale-110", isTasksPanelOpen && "text-blue-500")} />
@@ -150,49 +151,30 @@ const RangeCard = ({ range, idx, style, days, displayName, description = '', onD
                     </button>
                 )}
 
-                <div className="flex items-center justify-between gap-3 mt-1">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums truncate">
-                        {format(range.start, 'MMM d')} → {format(range.end, 'MMM d')}
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {RANGE_COLORS.map((c, i) => {
-                            const isSelected = range.colorIndex !== undefined ? range.colorIndex === i : (idx % RANGE_COLORS.length) === i;
-                            return (
-                                <button
-                                    key={i}
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); onUpdateColor(i); }}
-                                    className={cn(
-                                        "size-3.5 rounded-full border border-black/10 dark:border-white/10 hover:scale-125 transition-transform cursor-pointer relative flex items-center justify-center",
-                                        isSelected && "ring-2 ring-offset-1 ring-primary dark:ring-offset-gray-900"
-                                    )}
-                                    style={{ backgroundColor: `hsl(${c.h}, ${c.s}%, ${c.l}%)` }}
-                                    title={`Set color ${i + 1}`}
-                                >
-                                    {isSelected && (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="size-2 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
+                <div className="flex flex-wrap gap-1 mt-2 mb-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {RANGE_COLORS.map((c, i) => {
+                        const isSelected = range.colorIndex !== undefined ? range.colorIndex === i : (idx % RANGE_COLORS.length) === i;
+                        return (
+                            <button
+                                key={i}
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); onUpdateColor(i); }}
+                                className={cn(
+                                    "size-3.5 rounded-full border border-black/10 dark:border-white/10 hover:scale-125 transition-transform cursor-pointer relative flex items-center justify-center",
+                                    isSelected && "ring-2 ring-offset-1 ring-primary dark:ring-offset-gray-900"
+                                )}
+                                style={{ backgroundColor: `hsl(${c.h}, ${c.s}%, ${c.l}%)` }}
+                                title={`Set color ${i + 1}`}
+                            >
+                                {isSelected && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-2 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {days} {days === 1 ? 'day' : 'days'}
-                    {range.start.getFullYear() !== range.end.getFullYear() && (
-                        <span className="ml-1">across {range.end.getFullYear() - range.start.getFullYear() + 1} years</span>
-                    )}
-                </p>
-                {range.createdAt && !isNaN(new Date(range.createdAt).getTime()) && (
-                    <p className="text-[10px] text-muted-foreground/50 mt-0.5 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="size-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        Created {format(new Date(range.createdAt), 'MMM d, hh:mm a')}
-                    </p>
-                )}
 
                 {/* Description */}
                 {editingDesc ? (
@@ -214,7 +196,7 @@ const RangeCard = ({ range, idx, style, days, displayName, description = '', onD
                     <button
                         type="button"
                         onClick={startDescEdit}
-                        className="w-full text-left mt-1.5 text-xs text-muted-foreground/80 line-clamp-2 hover:text-foreground transition-colors cursor-pointer"
+                        className="w-full text-left mt-1 text-[11px] text-muted-foreground/80 line-clamp-2 hover:text-foreground transition-colors cursor-pointer"
                         title="Click to edit description"
                     >
                         {description}
@@ -228,6 +210,26 @@ const RangeCard = ({ range, idx, style, days, displayName, description = '', onD
                         + Add description...
                     </button>
                 )}
+
+                <div className="mt-3 pt-2.5 pb-0.5 border-t border-border/50">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums truncate">
+                        {format(range.start, 'MMM d')} → {format(range.end, 'MMM d')}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {days} {days === 1 ? 'day' : 'days'}
+                        {range.start.getFullYear() !== range.end.getFullYear() && (
+                            <span className="ml-1">across {range.end.getFullYear() - range.start.getFullYear() + 1} years</span>
+                        )}
+                    </p>
+                    {range.createdAt && !isNaN(new Date(range.createdAt).getTime()) && (
+                        <p className="text-[10px] text-muted-foreground/50 mt-0.5 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="size-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            Created {format(new Date(range.createdAt), 'MMM d, hh:mm a')}
+                        </p>
+                    )}
+                </div>
             </div>
 
             <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 flex items-center self-center">
@@ -548,6 +550,7 @@ export const EventModal = () => {
             } : ev);
             setEvents(updated);
             showSuccess(`Event "${formData.title || 'Untitled'}" updated`);
+            logActivity("UPDATE", "Calendar", `Updated event: ${formData.title || 'Untitled'}`);
         } else {
             const newEvent: CalendarEvent = {
                 id: Math.random().toString(36).substring(7),
@@ -563,6 +566,7 @@ export const EventModal = () => {
             };
             setEvents([...events, newEvent]);
             showSuccess(`Event "${formData.title || 'New Event'}" created`);
+            logActivity("CREATE", "Calendar", `Created event: ${formData.title || 'New Event'}`);
         }
 
         setFormData({ title: '', description: '', tags: '', creator: '', color: 'default', type: 'task' });

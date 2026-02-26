@@ -1,12 +1,18 @@
 import { FiSun, FiMoon, FiBox, FiCommand, FiTerminal } from 'react-icons/fi';
 import { useTheme } from '../context/themeContext';
+import { logActivity } from '../utils/activityLogger';
 
 const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
+  const handleToggle = () => {
+    toggleTheme();
+    logActivity("UPDATE", "Settings", "Changed application theme");
+  };
+
   return (
     <button
-      onClick={toggleTheme}
+      onClick={handleToggle}
       className={`theme-switch relative p-2.5 rounded-2xl transition-all duration-500 group overflow-hidden ${theme === 'light'
         ? 'bg-gray-100 text-amber-500 hover:bg-amber-50 shadow-sm border border-gray-200'
         : theme === 'dark'

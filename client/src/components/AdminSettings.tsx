@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import api from "../api/axios";
-import { FiCpu, FiShield, FiLock, FiCheckCircle } from "react-icons/fi";
+import { FiCpu, FiShield, FiLock, FiCheckCircle, FiTerminal, FiRefreshCw } from "react-icons/fi";
 import { useToast } from "./ToastProvider";
 import { useTheme } from "../context/themeContext";
+import { logActivity } from "../utils/activityLogger";
 
 interface SystemSettings {
   roleSystemEnabled: boolean;
@@ -31,6 +32,7 @@ const Settings: React.FC = () => {
       const res = await api.patch("/settings/toggle", { enabled });
       setSettings((prev) => prev ? { ...prev, roleSystemEnabled: enabled } : null);
       showSuccess(res.data.message);
+      logActivity("UPDATE", "Settings", `Role System ${enabled ? 'Enabled' : 'Disabled'}`);
     } catch (err) {
       console.error("Toggle system error:", err);
       showError("Failed to update role system status");
@@ -42,6 +44,7 @@ const Settings: React.FC = () => {
       const res = await api.patch("/settings/mode", { mode });
       setSettings((prev) => prev ? { ...prev, governanceMode: mode } : null);
       showSuccess(res.data.message);
+      logActivity("UPDATE", "Settings", `Governance Mode changed to ${mode}`);
     } catch (err) {
       console.error("Mode change error:", err);
       showError("Failed to update governance mode");
@@ -201,6 +204,9 @@ const Settings: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* System Activity Console */}
+      <SystemConsole />
     </div>
   );
 };
@@ -226,6 +232,193 @@ const ThemeFeatureToggle: React.FC<{ label: string; description: string; feature
             }`}
         />
       </button>
+    </div>
+  );
+};
+
+// System Activity Console Component
+interface LogEntry {
+  _id: string;
+  action: string;
+  module: string;
+  description: string;
+  createdAt: string;
+  user?: {
+    username: string;
+    email?: string;
+    role?: string;
+  };
+}
+
+const SystemConsole: React.FC = () => {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpandedId(prev => (prev === id ? null : id));
+  };
+
+  const fetchLogs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/activity");
+      setLogs(res.data);
+    } catch (error) {
+      console.error("Failed to fetch activity logs", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+
+    const interval = setInterval(() => {
+      fetchLogs();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  function getActionColor(action: string) {
+    switch (action.toUpperCase()) {
+      case "DELETE":
+      case "REMOVE":
+        return "text-red-400";
+      case "CREATE":
+      case "ADD":
+        return "text-emerald-400";
+      case "UPDATE":
+      case "EDIT":
+        return "text-blue-400";
+      default:
+        return "text-orange-400";
+    }
+  }
+
+  return (
+    <div className="bg-gray-900 md:p-8 p-6 rounded-[32px] shadow-2xl border border-gray-800 flex flex-col pt-8 relative overflow-hidden group">
+      {/* Decorative scanline and gradient top */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-emerald-300 to-emerald-500 opacity-70"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+
+      <div className="flex items-center justify-between mb-6 z-10 relative">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-100 flex items-center gap-3">
+          <div className="p-2.5 bg-gray-800 text-emerald-400 rounded-xl">
+            <FiTerminal className="w-5 h-5 md:w-6 md:h-6" />
+          </div>
+          System Activity Console
+        </h2>
+        <div className="flex gap-2">
+          {/* Quick Mock Action buttons */}
+          <button
+            onClick={() => {
+              logActivity("DELETE", "Calendar", "Deleted Event 'Meeting'").then(fetchLogs);
+            }}
+          >
+          </button>
+
+          <button
+            onClick={fetchLogs}
+            className={`text-gray-400 hover:text-emerald-400 transition-colors p-2 rounded-lg hover:bg-gray-800 flex items-center gap-2 text-sm font-semibold`}
+          >
+            <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">Refresh Logic Tracker</span>
+          </button>
+        </div>
+      </div>
+
+      <p className="text-gray-400 text-sm mb-6 z-10">Monitoring global administrative actions, deletions, additions and modifications across all modules.</p>
+
+      <div className="bg-[#0D1117] rounded-2xl p-4 md:p-6 font-mono text-xs md:text-sm shadow-inner overflow-hidden border border-gray-800 z-10 flex flex-col h-[600px] relative">
+        {/* Terminal Header */}
+        <div className="flex items-center gap-2 mb-4 border-b border-gray-800 pb-3 shrink-0">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+          </div>
+          <p className="text-gray-600 font-bold ml-2 text-[10px] md:text-xs">bash - admin console - 80x24</p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar text-gray-300">
+          {logs.length === 0 ? (
+            <div className="text-gray-500 italic flex items-center justify-center h-full">
+              ~ no logs found
+            </div>
+          ) : (
+            logs.map((log) => (
+              <div
+                key={log._id}
+                className="bg-gray-900 border border-gray-800 rounded-xl mb-3 overflow-hidden transition-all"
+              >
+                {/* Main Row */}
+                <div
+                  onClick={() => toggleExpand(log._id)}
+                  className="cursor-pointer p-4 flex justify-between items-center hover:bg-gray-800 transition"
+                >
+                  <div>
+                    <p className={`text-sm font-semibold ${getActionColor(log.action)}`}>
+                      {log.action}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {log.module}
+                    </p>
+                  </div>
+
+                  <span className="text-xs text-gray-500">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Expandable Section */}
+                {expandedId === log._id && (
+                  <div className="px-4 pb-4 border-t border-gray-800 text-sm text-gray-300 animate-fadeIn">
+                    <p className="mt-3">
+                      <span className="text-gray-400">User:</span>{" "}
+                      {log.user?.username || "Raam Phogat"}
+                    </p>
+
+                    <p className="mt-1">
+                      <span className="text-gray-400">Role:</span>{" "}
+                      <span className="capitalize">{log.user?.role || "Admin"}</span>
+                    </p>
+
+                    <p className="mt-1">
+                      <span className="text-gray-400">Email:</span>{" "}
+                      {log.user?.email || "raam.phogat@gmail.com"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+          {loading && (
+            <div className="text-emerald-500 animate-pulse mt-4">
+              <span className="mr-2">&gt;</span>fetching fresh logs...<span className="animate-ping ml-1">_</span>
+            </div>
+          )}
+          {!loading && <div className="text-emerald-500 mt-2"><span className="mr-2 text-gray-500">&gt;</span><span className="animate-pulse">_</span></div>}
+        </div>
+      </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(31, 41, 55, 0.5); 
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(16, 185, 129, 0.4); 
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(16, 185, 129, 0.8); 
+        }
+      `}</style>
     </div>
   );
 };

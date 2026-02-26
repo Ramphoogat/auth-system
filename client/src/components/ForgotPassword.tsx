@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import LiquidChrome from './LightRays';
 import ThemeComponent from './ThemeComponent';
+import { logActivity } from '../utils/activityLogger';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -15,6 +16,7 @@ const ForgotPassword = () => {
         try {
             const { data } = await api.post('/auth/forgot-password', { email });
             setMessage(data.message);
+            logActivity("UPDATE", "Security", `Requested password reset for ${email}`);
             // alert('Password reset link sent to your email');
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {

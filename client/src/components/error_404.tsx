@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiHome } from 'react-icons/fi';
 import LightRays from './LightRays';
+import { logActivity } from '../utils/activityLogger';
 
 const Error404: React.FC = () => {
     const navigate = useNavigate();
@@ -9,6 +10,7 @@ const Error404: React.FC = () => {
     const isAuthenticated = !!token;
 
     const handleGoBack = () => {
+        logActivity("INFO", "Navigation", "Returned from 404 Error Page");
         if (isAuthenticated) {
             navigate('/dashboard');
         } else {

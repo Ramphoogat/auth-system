@@ -17,6 +17,7 @@ import {
     FiChevronRight
 
 } from 'react-icons/fi';
+import { logActivity } from '../utils/activityLogger';
 
 // --- Types ---
 
@@ -588,6 +589,7 @@ const Kanban: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
             }
         }));
         setContextMenu(null);
+        logActivity("UPDATE", "Kanban", `Moved task to ${targetColumn.title}`);
     };
 
     const handleAddColumn = (title: string, color: string) => {
@@ -609,6 +611,7 @@ const Kanban: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
         }));
         setIsColumnModalOpen(false);
         showSuccess(`Column "${title}" added`);
+        logActivity("CREATE", "Kanban", `Created column: ${title}`);
     };
 
     const openAddTaskModal = (columnId: string) => {
@@ -651,6 +654,7 @@ const Kanban: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
         setIsTaskModalOpen(false);
         setActiveColumnId(null);
         showSuccess(`Task "${taskData.content}" added`);
+        logActivity("CREATE", "Kanban", `Created task: ${taskData.content}`);
 
         // Add to Calendar
         const newEventDate = taskData.dueDate ? new Date(taskData.dueDate) : new Date();
@@ -699,6 +703,7 @@ const Kanban: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
             }
         }));
         showSuccess(`Task "${taskName}" deleted`);
+        logActivity("DELETE", "Kanban", `Deleted task: ${taskName}`);
 
         // Delete from Calendar
         const newCalendarPayload = {
@@ -734,6 +739,7 @@ const Kanban: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
             columnOrder: newColumnOrder
         }));
         showSuccess(`Column "${columnName}" deleted`);
+        logActivity("DELETE", "Kanban", `Deleted column: ${columnName}`);
 
         // Delete from Calendar
         const newCalendarPayload = {

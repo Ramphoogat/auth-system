@@ -4,6 +4,7 @@ import { FiX, FiDatabase, FiUpload, FiRefreshCw } from "react-icons/fi";
 import { AxiosError } from "axios";
 import api from "../api/axios";
 import { useToast } from "./ToastProvider";
+import { logActivity } from "../utils/activityLogger";
 
 // Basic Modal if not existing, but let me check if there is a Modal component.
 // checking previous file lists... I saw `ProfileEditModal` and `CreateUserModal`.
@@ -62,6 +63,7 @@ const GoogleSheetsModal = ({
       await api.post("/sheets/connect", { sheetId });
       showSuccess("Connected to Google Sheet successfully");
       setIsConnected(true);
+      logActivity("CREATE", "Settings", `Connected to Google Sheets: ${sheetId}`);
       fetchStatus();
     } catch (err: unknown) {
       const error = err as AxiosError<{ message: string }>;
@@ -83,6 +85,7 @@ const GoogleSheetsModal = ({
       setIsLoading(true);
       const res = await api.post("/sheets/sync/push");
       showSuccess(res.data.message);
+      logActivity("UPDATE", "Settings", "Exported records to Google Sheets");
       fetchStatus();
       if (onSyncComplete) onSyncComplete();
     } catch (err: unknown) {

@@ -34,6 +34,7 @@ import { TasksPanel, TasksPanelTrigger, EventModal } from './TasksPanel';
 import { saveCalendarData, syncCalendarData } from '../../api/calendar';
 import { Button } from './button';
 import type { RangeMatch } from './calendar-utils';
+import { logActivity } from '../../utils/activityLogger';
 
 declare global {
     interface Window {
@@ -45,6 +46,8 @@ declare global {
             addRange: (range: DateRange) => void;
             renameRange: (id: string, label: string) => void;
             updateRangeDescription: (id: string, description: string) => void;
+            updateEventTitle?: (id: string, title: string) => void;
+            updateEventDescription?: (id: string, description: string) => void;
             toggleLock: (e: React.MouseEvent, _date: Date, rangeMatches: RangeMatch[]) => void;
         };
     }
@@ -135,11 +138,27 @@ export const Calendar = ({
     useHotkeys('d', () => changeView('day'), { enabled: enableHotkeys });
 
     const deleteEvent = useCallback((id: string) => {
-        setEvents((prev) => { deletedEventsStack.current.push(prev); return prev.filter((e) => e.id !== id); });
+        setEvents((prev) => {
+            const ev = prev.find(e => e.id === id);
+            if (ev) logActivity("DELETE", "Calendar", `Deleted event: ${ev.title}`);
+            deletedEventsStack.current.push(prev);
+            return prev.filter((e) => e.id !== id);
+        });
     }, []);
 
     const clearAllEvents = useCallback(() => {
+        logActivity("DELETE", "Calendar", `Cleared all events from calendar`);
         setEvents((prev) => { deletedEventsStack.current.push(prev); return []; });
+    }, []);
+
+    const updateEventTitle = useCallback((id: string, title: string) => {
+        logActivity("UPDATE", "Calendar", `Renamed event to ${title}`);
+        setEvents((prev) => prev.map((e) => e.id === id ? { ...e, title } : e));
+    }, []);
+
+    const updateEventDescription = useCallback((id: string, description: string) => {
+        logActivity("UPDATE", "Calendar", `Updated event description`);
+        setEvents((prev) => prev.map((e) => e.id === id ? { ...e, description } : e));
     }, []);
 
     const undoDelete = useCallback(() => {
@@ -147,11 +166,17 @@ export const Calendar = ({
     }, []);
 
     const addRange = useCallback((range: DateRange) => {
+        logActivity("CREATE", "Calendar", `Created time range: ${range.label || "Untitled"}`);
         setRanges((prev) => [...prev, range]);
     }, []);
 
     const deleteRange = useCallback((id: string) => {
-        setRanges((prev) => { deletedRangesStack.current.push(prev); return prev.filter((r) => r.id !== id); });
+        setRanges((prev) => {
+            const r = prev.find(rng => rng.id === id);
+            if (r) logActivity("DELETE", "Calendar", `Deleted time range: ${r.label || "Untitled"}`);
+            deletedRangesStack.current.push(prev);
+            return prev.filter((r) => r.id !== id);
+        });
     }, []);
 
     const undoDeleteRange = useCallback(() => {
@@ -159,14 +184,17 @@ export const Calendar = ({
     }, []);
 
     const renameRange = useCallback((id: string, label: string) => {
+        logActivity("UPDATE", "Calendar", `Renamed time range to ${label}`);
         setRanges((prev) => prev.map((r) => r.id === id ? { ...r, label } : r));
     }, []);
 
     const updateRangeDescription = useCallback((id: string, description: string) => {
+        logActivity("UPDATE", "Calendar", `Updated time range description`);
         setRanges((prev) => prev.map((r) => r.id === id ? { ...r, description } : r));
     }, []);
 
     const updateRangeColor = useCallback((id: string, colorIndex: number) => {
+        logActivity("UPDATE", "Calendar", `Changed time range color`);
         setRanges((prev) => prev.map((r) => r.id === id ? { ...r, colorIndex } : r));
     }, []);
 
@@ -180,6 +208,7 @@ export const Calendar = ({
             selectedEventForEdit, setSelectedEventForEdit,
             isTasksPanelOpen, setIsTasksPanelOpen,
             deleteEvent, clearAllEvents, undoDelete,
+            updateEventTitle, updateEventDescription,
             ranges, draftStart, setDraftStart,
             addRange, deleteRange, undoDeleteRange, renameRange, updateRangeDescription, updateRangeColor,
             readOnly,
@@ -240,7 +269,7 @@ const CalendarNextTrigger = forwardRef<
             )}
             {...props}
         >
-            <FiChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-600 dark:text-gray-300" />
+            <FiChevronRight className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" />
         </button>
     );
 });
@@ -273,7 +302,7 @@ const CalendarPrevTrigger = forwardRef<
             )}
             {...props}
         >
-            <FiChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-600 dark:text-gray-300" />
+            <FiChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" />
         </button>
     );
 });
@@ -300,7 +329,7 @@ const CalendarTodayTrigger = forwardRef<
             className={cn(
                 "px-3 py-1.5 md:px-5 md:py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.15em] transition-all duration-300",
                 "bg-white/50 dark:bg-gray-800/50 backdrop-blur-md border border-gray-200 dark:border-gray-700",
-                "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white",
+                "text-emerald-600 dark:text-emerald-400 hover:text-gray-900 dark:hover:text-white",
                 "hover:border-gray-900/20 dark:hover:border-white/20 hover:bg-white dark:hover:bg-gray-700 hover:shadow-lg active:scale-95",
                 className
             )}
@@ -354,7 +383,7 @@ const CalendarCurrentDate = () => {
                         isMonthOpen && "bg-gray-100 dark:bg-gray-800/50"
                     )}
                 >
-                    <span className="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                    <span className="text-xl md:text-2xl font-black text-emerald-500 dark:text-emerald-500 tracking-tight">
                         {months[currentMonth]}
                     </span>
                     <ChevronsUpDown className={cn(
@@ -471,7 +500,7 @@ function CalendarAppInner() {
     const {
         view: contextView, setView: setContextView, onChangeView, readOnly,
         setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange,
-        renameRange, updateRangeDescription
+        renameRange, updateRangeDescription, updateEventTitle, updateEventDescription
     } = useCalendar();
     const [isViewOpen, setIsViewOpen] = useState(false);
     const viewRef = useRef<HTMLDivElement>(null);
@@ -486,9 +515,11 @@ function CalendarAppInner() {
             addRange,
             renameRange,
             updateRangeDescription,
+            updateEventTitle,
+            updateEventDescription,
             toggleLock: () => { } // Placeholder
         };
-    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription]);
+    }, [setSelectedDateForEvent, setIsEventModalOpen, draftStart, setDraftStart, addRange, renameRange, updateRangeDescription, updateEventTitle, updateEventDescription]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -522,7 +553,7 @@ function CalendarAppInner() {
                         <button
                             onClick={() => setIsViewOpen(!isViewOpen)}
                             className={cn(
-                                "group relative flex items-center gap-2.5 px-4 md:px-5 py-2.5 rounded-[1.25rem] border transition-all duration-300 w-full md:min-w-[150px]",
+                                "group relative flex items-center gap-2.5 px-4 md:px-5 py-2.5 rounded-[1.25rem] border transition-all duration-300 w-full md:min-w-[150px] text-emerald-500",
                                 "bg-white/50 dark:bg-gray-800/50 backdrop-blur-md border-gray-200 dark:border-gray-700",
                                 "hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10",
                                 isViewOpen && "border-emerald-500 ring-4 ring-emerald-500/10 shadow-xl shadow-emerald-500/10 text-emerald-600 dark:text-emerald-400"

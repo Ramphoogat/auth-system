@@ -131,6 +131,11 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
+.dark .glass-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
 .bg-grid-pattern {
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),

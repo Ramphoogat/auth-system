@@ -52,12 +52,17 @@ export default {
       },
       animation: {
         'gradient': 'gradient 15s ease infinite',
+        'fadeIn': 'fadeIn 0.2s ease-in-out',
       },
       keyframes: {
         gradient: {
           '0%': { 'background-position': '0% 50%' },
           '50%': { 'background-position': '100% 50%' },
           '100%': { 'background-position': '0% 50%' },
+        },
+        fadeIn: {
+          from: { opacity: '0', transform: 'translateY(-5px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
         }
       }
     },
