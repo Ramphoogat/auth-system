@@ -151,7 +151,7 @@ const RangeCard = ({ range, idx, style, days, displayName, description = '', onD
                     </button>
                 )}
 
-                <div className="flex flex-wrap gap-1 mt-2 mb-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex flex-wrap gap-1 mt-2 mb-1 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity transition-all duration-300">
                     {RANGE_COLORS.map((c, i) => {
                         const isSelected = range.colorIndex !== undefined ? range.colorIndex === i : (idx % RANGE_COLORS.length) === i;
                         return (
@@ -205,7 +205,7 @@ const RangeCard = ({ range, idx, style, days, displayName, description = '', onD
                     <button
                         type="button"
                         onClick={startDescEdit}
-                        className="w-full text-left mt-1 text-[11px] text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity hover:text-muted-foreground/70 cursor-pointer"
+                        className="w-full text-left mt-1 text-[11px] text-muted-foreground/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:text-muted-foreground/70 cursor-pointer"
                     >
                         + Add description...
                     </button>
@@ -232,7 +232,7 @@ const RangeCard = ({ range, idx, style, days, displayName, description = '', onD
                 </div>
             </div>
 
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 flex items-center self-center">
+            <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0 flex items-center self-center">
                 <button
                     type="button"
                     onClick={onDelete}
@@ -360,7 +360,7 @@ export const TasksPanel = () => {
                                                         </div>
                                                     </div>
 
-                                                    <div className="absolute right-3 top-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="absolute right-3 top-3 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                         <button
                                                             onClick={() => {
                                                                 setSelectedDateForEvent(event.start);

@@ -12,7 +12,7 @@ export interface ToastProps {
 }
 
 const Toast: React.FC<ToastProps> = ({ 
-  id, 
+  id,
   message, 
   type = 'info', 
   duration = 3000,
